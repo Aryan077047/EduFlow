@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.error {
+    margin-top: 6px;
+}
+.error ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.error li {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f4f7f1;
+}
+
+.auth-layout-wrap {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 15px;
+}
+
+.card {
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    max-width: 980px;
+    width: 100%;
+    background: #fafdf7;
+}
+
+.auth-left {
+    background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)),
+                url("{% static 'dist-assets/images/photo-long-3.jpg' %}") center/cover no-repeat;
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    position: relative;
+}
+
+.auth-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(77, 139, 49, 0.18), transparent);
+}
+
+.auth-right {
+    padding: 2.8rem 2.2rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* ====================== LOGO ====================== */
+.auth-logo {
+    text-align: center;
+}
+.auth-logo img {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #ffffff;
+    border: 6px solid #ffffff;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    margin-bottom: 20px;
+}
+
+.welcome-text {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 30px;
+}
+.welcome-text h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.welcome-text p {
+    font-size: 0.96rem;
+    opacity: 0.92;
+    line-height: 1.5;
+}
+
+/* Social Buttons */
+.social-buttons a {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    transition: box-shadow 0.3s ease;
+}
+.email { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
+.google { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
+.facebook { background: #1877f2; color: #fff; }
+.social-buttons a:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+/* فرم */
+.form-side {
+    background: #fff;
+    padding: 2.8rem 2.5rem;
+}
+.form-side h1 {
+    font-size: 1.78rem;
+    font-weight: 700;
+    color: #18311f;
+    margin-bottom: 8px;
+}
+.form-subtitle {
+    color: #7a887f;
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+}
+.form-group {
+    margin-bottom: 22px;
+}
+.form-group .icon-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #374151;
+}
+.form-group .icon-label i {
+    font-size: 1.15rem;
+    color: #5d9c59;
+    width: 20px;
+}
+.form-group input {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    font-size: 0.96rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-group input:focus {
+    border-color: #7fbf5b;
+    box-shadow: 0 0 0 4px rgba(127, 191, 91, 0.15);
+    outline: none;
+}
+
+/* دکمه */
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4d8b31, #2f5233);
+    color: white;
+    font-weight: 600;
+    font-size: 1.02rem;
+    margin-top: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5d9c59, #3d7a47);
+    box-shadow: 0 10px 25px rgba(77, 139, 49, 0.35);
+}
+
+/* لینک سوئیچ */
+.auth-switch {
+    text-align: center;
+    margin-top: 25px;
+    font-size: 0.94rem;
+    color: #6b7280;
+}
+.auth-switch a {
+    color: #5d9c59;
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-switch a:hover {
+    color: #4d8b31;
+    text-decoration: underline;
+}
+
+/* ریسپانسیو */
+@media (max-width: 768px) {
+    .auth-left { min-height: 420px; }
+    .auth-logo img { width: 90px; height: 90px; }
+    .form-side { padding: 2rem 1.8rem; }
+}
+
+/* ============================================================
+   🌙 DARK MODE OVERRIDES
+   ============================================================ */
+[data-theme="dark"] body {
+    background: #0d1510 !important;
+}
+
+[data-theme="dark"] .card {
+    background: #16201a !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .form-side {
+    background: #16201a !important;
+}
+
+[data-theme="dark"] .form-side h1 {
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .form-subtitle {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .form-group .icon-label {
+    color: #a5d6a7 !important;
+}
+
+[data-theme="dark"] .form-group .icon-label i {
+    color: #a3e635 !important;
+}
+
+[data-theme="dark"] .form-group input {
+    background: #1b2620 !important;
+    border-color: #2f4638 !important;
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .form-group input::placeholder {
+    color: #6d7f72 !important;
+}
+
+[data-theme="dark"] .form-group input:focus {
+    background: #1f2c24 !important;
+    border-color: #a3e635 !important;
+    box-shadow: 0 0 0 4px rgba(163, 230, 53, 0.15) !important;
+}
+
+[data-theme="dark"] .auth-switch {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .auth-switch a {
+    color: #a3e635 !important;
+}
+
+[data-theme="dark"] .auth-switch a:hover {
+    color: #bef264 !important;
+}
+
+[data-theme="dark"] .error li {
+    color: #ef4444 !important;
+}
+
+[data-theme="dark"] .email,
+[data-theme="dark"] .google {
+    background: #1b2620 !important;
+    color: #e4ede6 !important;
+    border-color: #2f4638 !important;
+}
+
+[data-theme="dark"] .social-buttons a:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 🛡️ GPU safety — disable blur in dark mode */
+[data-theme="dark"] * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+</style>
+<div class="auth-layout-wrap">
+    <div class="card">
+        <div class="row g-0">
+            <!-- LEFT SIDE -->
+            <div class="col-md-6 auth-left">
+                <div class="auth-right">
+                    <div class="auth-logo">
+                        <img src="{% static 'dist-assets/images/newlogo.png' %}" alt="Logo">
+                    </div>
+                    <div class="welcome-text">
+                        <h2>Welcome!</h2>
+                        <p>Join thousands of professionals building their future with us.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- RIGHT SIDE - Form -->
+            <div class="col-md-6">
+                <div class="form-side">
+                    <h1>Create Account</h1>
+                    <div class="form-subtitle">Please fill in your details</div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <div class="icon-label">
+                                    <i class="fa fa-user"></i>
+                                    <span>First Name</span>
+                                </div>
+                                {{ form.first_name }}
+                                <div class="error">
+                                    {{ form.first_name.errors }}
+                                </div>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <div class="icon-label">
+                                    <i class="fa fa-user"></i>
+                                    <span>Last Name</span>
+                                </div>
+                                {{ form.last_name }}
+                                <div class="error">
+                                    {{ form.last_name.errors }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="icon-label">
+                                <i class="fa fa-envelope"></i>
+                                <span>Email Address</span>
+                            </div>
+                            {{ form.email }}
+                            <div class="error">{{ form.email.errors }}</div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="icon-label">
+                                <i class="fa fa-lock"></i>
+                                <span>Password</span>
+                            </div>
+                            {{ form.password1 }}
+                            <div class="error">{{ form.password1.errors }}</div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="icon-label">
+                                <i class="fa fa-lock"></i>
+                                <span>Confirm Password</span>
+                            </div>
+                            {{ form.password2 }}
+                            <div class="error">{{ form.password2.errors }}</div>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            Create My Account
+                        </button>
+                    </form>
+
+                    <div class="auth-switch">
+                        Already have an account?
+                        <a href="{% url 'user_login' %}">Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

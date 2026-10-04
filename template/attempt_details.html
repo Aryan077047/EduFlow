@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade Attempt · {{ quiz.title }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; }
+    body { background:#f4f7f1; color:#18311f; padding:2rem; min-height:100vh; }
+    .page { max-width:960px; margin:auto; }
+
+    .back-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      color:#7d8f82; font-size:.85rem; font-weight:600;
+      padding:.5rem 1rem; border-radius:999px;
+      background:white; border:1px solid #dce8d8;
+      text-decoration:none; margin-bottom:1.5rem; transition:.2s;
+    }
+    .back-btn:hover { background:#5d9c59; color:white; border-color:#5d9c59; }
+
+    .header-card {
+      background:linear-gradient(135deg, #18311f 0%, #2f5233 100%);
+      border-radius:22px; padding:1.8rem 2rem; color:#fff;
+      margin-bottom:1.5rem;
+    }
+    .header-card h1 { font-size:1.5rem; font-weight:800; margin-bottom:.4rem; }
+    .header-card .meta { font-size:.85rem; color:rgba(255,255,255,.7); }
+    .header-card .stats {
+      display:flex; gap:2rem; margin-top:1.2rem; flex-wrap:wrap;
+    }
+    .header-card .stat strong { display:block; font-size:1.2rem; color:#a3e635; }
+    .header-card .stat span { font-size:.7rem; text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.55); }
+
+    .answer-card {
+      background:white; border-radius:18px; padding:1.4rem 1.6rem;
+      border:1px solid #e6efe0; margin-bottom:1rem;
+    }
+    .answer-head {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:1rem; flex-wrap:wrap; margin-bottom:1rem;
+    }
+    .q-num {
+      display:inline-flex; align-items:center; gap:8px;
+      font-size:.72rem; font-weight:800; text-transform:uppercase;
+      letter-spacing:.7px; color:#2f5233;
+      background:rgba(127,191,91,.13);
+      padding:.35rem .9rem; border-radius:30px;
+    }
+    .badge {
+      padding:.3rem .8rem; border-radius:999px;
+      font-size:.68rem; font-weight:800; text-transform:uppercase;
+    }
+    .badge.correct { background:rgba(127,191,91,.18); color:#2f5233; }
+    .badge.wrong   { background:rgba(220,38,38,.1); color:#dc2626; }
+    .badge.manual  { background:rgba(59,130,246,.12); color:#3b82f6; }
+
+    .q-text {
+      font-size:.95rem; font-weight:700;
+      line-height:1.5; margin-bottom:1rem; color:#18311f;
+    }
+
+    .student-answer {
+      background:#fafcf7; border:1px solid #e6efe0;
+      border-radius:14px; padding:1rem 1.2rem;
+      font-size:.9rem; line-height:1.6; color:#18311f;
+      margin-bottom:1rem;
+    }
+    .student-answer.empty { color:#a0aec0; font-style:italic; }
+
+    .correct-note {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:.78rem; font-weight:700;
+      color:#5d9c59; margin-bottom:.6rem;
+    }
+
+    .grade-row {
+      display:flex; gap:1rem; align-items:flex-end;
+      flex-wrap:wrap; margin-top:1rem; padding-top:1rem;
+      border-top:1px solid #eef4e9;
+    }
+    .grade-row .field { flex:1; min-width:180px; }
+    .grade-row label {
+      display:block; font-size:.7rem; font-weight:800;
+      text-transform:uppercase; color:#2f5233;
+      letter-spacing:.6px; margin-bottom:.4rem;
+    }
+    .grade-row input[type="number"],
+    .grade-row textarea {
+      width:100%; padding:.7rem 1rem;
+      background:#f6faf2; border:1.5px solid #e2ecdb;
+      border-radius:12px; font-family:inherit;
+      font-size:.88rem; font-weight:500;
+      color:#18311f; outline:none; transition:.2s;
+    }
+    .grade-row input:focus,
+    .grade-row textarea:focus {
+      border-color:#7fbf5b; background:white;
+      box-shadow:0 0 0 4px rgba(127,191,91,.14);
+    }
+
+    .save-bar {
+      position:sticky; bottom:1rem;
+      background:white; border-radius:18px;
+      padding:1rem 1.4rem;
+      border:1px solid #e6efe0;
+      box-shadow:0 12px 28px -12px rgba(24,49,31,.2);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:1rem; flex-wrap:wrap;
+      margin-top:2rem;
+    }
+    .save-bar .total { font-weight:800; font-size:1rem; color:#2f5233; }
+    .save-bar .total span { font-size:.75rem; font-weight:600; color:#7d8f82; display:block; }
+
+    .btn {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:.75rem 1.4rem; border-radius:40px;
+      font-weight:800; font-size:.82rem;
+      cursor:pointer; border:none; transition:.2s;
+      font-family:inherit;
+    }
+    .btn-green {
+      background:linear-gradient(135deg, #2f5233, #5d9c59);
+      color:white;
+      box-shadow:0 8px 18px -8px rgba(93,156,89,.7);
+    }
+    .btn-green:hover { transform:translateY(-2px); }
+
+    .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+    .toast {
+      position:fixed; bottom:30px; right:30px;
+      padding:12px 20px; border-radius:12px;
+      color:white; font-weight:600; font-size:.85rem;
+      z-index:9999; opacity:0; transition:opacity .3s;
+      box-shadow:0 10px 25px rgba(0,0,0,.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="{% url 'quiz_submissions' quiz.id %}" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Submissions
+    </a>
+
+    <div class="header-card">
+      <h1>{{ attempt.student.get_full_name|default:attempt.student.email }}</h1>
+      <div class="meta">
+        {{ quiz.title }} · submitted {{ attempt.submitted_at|date:"M d, Y H:i" }}
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <strong>{{ attempt.total_score }} / {{ quiz.total_points }}</strong>
+          <span>Score</span>
+        </div>
+        <div class="stat">
+          <strong>{{ attempt.percentage }}%</strong>
+          <span>Percentage</span>
+        </div>
+        <div class="stat">
+          <strong>{{ attempt.get_status_display }}</strong>
+          <span>Status</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="answersWrap">
+      {% for ans in answers %}
+      <div class="answer-card" data-answer-id="{{ ans.id }}"
+           data-question-type="{{ ans.question.question_type }}"
+           data-max-points="{{ ans.question.points }}">
+        <div class="answer-head">
+          <span class="q-num">Q{{ forloop.counter }} · {{ ans.question.points }} pts</span>
+          {% if ans.question.question_type == 'mc' %}
+            {% if ans.is_correct %}
+              <span class="badge correct"><i class="fas fa-check"></i> Correct</span>
+            {% else %}
+              <span class="badge wrong"><i class="fas fa-xmark"></i> Wrong</span>
+            {% endif %}
+          {% else %}
+            {% if ans.graded_at %}
+              <span class="badge correct"><i class="fas fa-check"></i> Graded</span>
+            {% else %}
+              <span class="badge manual"><i class="fas fa-pen"></i> Needs grading</span>
+            {% endif %}
+          {% endif %}
+        </div>
+
+        <div class="q-text">{{ ans.question.text }}</div>
+
+        {% if ans.question.question_type == 'mc' %}
+          <div class="student-answer {% if not ans.selected %}empty{% endif %}">
+            {% if ans.selected %}
+              <strong>Student picked:</strong> {{ ans.selected.text }}
+            {% else %}
+              No answer selected.
+            {% endif %}
+          </div>
+          <div class="correct-note">
+            <i class="fas fa-key"></i> Correct answer:
+            {% for a in ans.question.answers.all %}
+              {% if a.is_correct %}{{ a.text }}{% endif %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="student-answer {% if not ans.text_answer %}empty{% endif %}">
+            {% if ans.text_answer %}
+              {{ ans.text_answer|linebreaksbr }}
+            {% else %}
+              Student left this blank.
+            {% endif %}
+          </div>
+
+          <div class="grade-row">
+            <div class="field">
+              <label>Points (0 – {{ ans.question.points }})</label>
+              <input type="number" min="0" max="{{ ans.question.points }}"
+                     step="0.5" class="grade-points"
+                     value="{{ ans.points_awarded }}">
+            </div>
+            <div class="field" style="flex:2;">
+              <label>Feedback (optional)</label>
+              <textarea class="grade-feedback" rows="2"
+                        placeholder="Write feedback for the student...">{{ ans.teacher_feedback }}</textarea>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="save-bar">
+      <div class="total">
+        <span>Total score</span>
+        {{ attempt.total_score }} / {{ quiz.total_points }}
+      </div>
+      <button class="btn btn-green" id="saveGradesBtn">
+        <i class="fas fa-floppy-disk"></i> Save Grades
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const ATTEMPT_ID  = {{ attempt.id }};
+    const CSRF_TOKEN  = "{{ csrf_token }}";
+
+    function showToast(msg, type) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      t.style.background = type === 'error' ? '#dc2626' : '#18311f';
+      document.body.appendChild(t);
+      requestAnimationFrame(() => t.style.opacity = '1');
+      setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 300);
+      }, 2500);
+    }
+
+    document.getElementById('saveGradesBtn').addEventListener('click', async function () {
+      const btn = this;
+      const cards = document.querySelectorAll('.answer-card[data-question-type="explain"]');
+      const grades = [];
+
+      cards.forEach(card => {
+        const answerId = parseInt(card.dataset.answerId);
+        const maxPts   = parseFloat(card.dataset.maxPoints);
+        const pointsEl = card.querySelector('.grade-points');
+        const feedEl   = card.querySelector('.grade-feedback');
+
+        let pts = parseFloat(pointsEl.value);
+        if (isNaN(pts)) pts = 0;
+        pts = Math.max(0, Math.min(pts, maxPts));
+
+        grades.push({
+          answer_id: answerId,
+          points:    pts,
+          feedback:  feedEl ? feedEl.value.trim() : '',
+        });
+      });
+
+      btn.disabled = true;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      try {
+        const res = await fetch(`/quiz/attempt/${ATTEMPT_ID}/grade/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN,
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ grades }),
+        });
+
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('Grades saved!', 'success');
+          setTimeout(() => location.reload(), 800);
+        } else {
+          showToast(data.message || 'Save failed', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Network error.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+      }
+    });
+  </script>
+</body>
+</html>

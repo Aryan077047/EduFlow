@@ -1,0 +1,1083 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- ============================================================
+     STYLES
+============================================================ -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary-dark: #18311f;
+    --text-light: #7d8f82;
+    --bg-light: #f4f7f1;
+    --green-1: #5d9c59;
+    --green-2: #7fbf5b;
+    --green-3: #2f5233;
+    --green-4: #a3e635;
+    --red-1: #dc2626;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body { background: var(--bg-light); }
+
+/* ====================== PAGE ====================== */
+.dashboard-wrap {
+    padding: 2rem;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top right, rgba(127, 191, 91, .13), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(47, 82, 51, .10), transparent 28%);
+}
+
+/* ====================== HEADER ====================== */
+.dashboard-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dashboard-page-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 6px;
+}
+
+.dashboard-page-header span {
+    color: var(--text-light);
+    font-size: .95rem;
+}
+
+/* ====================== VIDEO GRID ====================== */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.3rem;
+}
+
+/* ====================== VIDEO CARD ====================== */
+.video-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, .78);
+    border: 1px solid rgba(255, 255, 255, .7);
+    box-shadow: 0 10px 30px rgba(29, 53, 36, .08), inset 0 1px 0 rgba(255, 255, 255, .7);
+    transition: box-shadow .3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.video-card:hover {
+    box-shadow: 0 18px 40px rgba(29, 53, 36, .14);
+}
+
+/* ====================== THUMBNAIL ====================== */
+.video-thumbnail {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: #1a1a2e;
+}
+
+.video-thumbnail video,
+.video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, .58), rgba(0, 0, 0, .08));
+}
+
+/* ====================== PLAY BUTTON ====================== */
+.play-btn-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .20);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, .25);
+    transition: background .3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.video-card:hover .play-btn-overlay {
+    background: rgba(255, 255, 255, .28);
+}
+
+/* ====================== DURATION ====================== */
+.video-duration {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, .72);
+    color: white;
+    font-size: .68rem;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* ====================== CONTENT ====================== */
+.video-content {
+    padding: 1.1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ====================== CATEGORY ====================== */
+.video-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #edf7e8;
+    color: #2f5233;
+    padding: 6px 11px;
+    border-radius: 30px;
+    font-size: .68rem;
+    font-weight: 700;
+    margin-bottom: .9rem;
+    align-self: flex-start;
+}
+
+/* ====================== TITLE ====================== */
+.video-title {
+    font-size: .98rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: .55rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ====================== DESCRIPTION ====================== */
+.video-description {
+    font-size: .80rem;
+    color: #748277;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ====================== AUTHOR ====================== */
+.video-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.video-author img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #edf7e8;
+}
+
+.author-name {
+    font-size: .84rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.author-role {
+    font-size: .72rem;
+    color: #7d8f82;
+}
+
+/* ====================== FOOTER ====================== */
+.video-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(205, 225, 201, .55);
+    padding-top: 1rem;
+    margin-top: auto;
+    gap: 0.6rem;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+/* ====================== STATS ====================== */
+.video-stats {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+}
+
+.video-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #6f8174;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color .2s ease;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.video-stat:hover { color: var(--green-3); }
+
+.video-stat i {
+    color: var(--green-1);
+    font-size: .75rem;
+}
+
+.video-stat.liked i { color: var(--red-1); }
+
+/* ====================== ACTIONS ====================== */
+.video-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+}
+
+.btn-action {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: .72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: box-shadow .25s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-enroll {
+    background: linear-gradient(135deg, #eab308, #ca8a04);
+    color: #422006;
+    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.20);
+    width: 105px;
+    min-width: 105px;
+    max-width: 105px;
+}
+
+.btn-enroll:hover {
+    color: #422006;
+    background: linear-gradient(135deg, #facc15, #eab308);
+    box-shadow: 0 8px 18px rgba(234, 179, 8, 0.30);
+}
+
+.btn-enroll.enrolled {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    cursor: default;
+    width: 105px;
+    min-width: 105px;
+    max-width: 105px;
+}
+
+.btn-enroll.enrolled:hover {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.btn-watch {
+    background: linear-gradient(135deg, #5d9c59, #2f5233);
+    color: white;
+    box-shadow: 0 4px 12px rgba(47, 82, 51, .20);
+    width: 85px;
+    min-width: 85px;
+}
+
+.btn-watch:hover {
+    color: white;
+    box-shadow: 0 8px 20px rgba(47, 82, 51, .30);
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.20);
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+}
+
+.btn-delete:hover {
+    color: white;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.30);
+}
+
+/* ====================== REMOVE COMMENT ====================== */
+.remove-comment-btn {
+    background: none;
+    border: none;
+    color: var(--red-1);
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 20px;
+    transition: background .2s ease;
+}
+
+.remove-comment-btn:hover {
+    background: #fee2e2;
+}
+
+/* ====================== EMPTY STATE ====================== */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: var(--green-1);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+    display: inline-block;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: var(--text-light);
+}
+
+/* ====================== COMMENT SECTION ====================== */
+.comment-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #cde2c5;
+}
+
+.comment-list {
+    max-height: 100px;
+    overflow-y: auto;
+    margin-bottom: 0.5rem;
+}
+
+.comment-list::-webkit-scrollbar { width: 3px; }
+
+.comment-list::-webkit-scrollbar-track {
+    background: #e8f0e5;
+    border-radius: 10px;
+}
+
+.comment-list::-webkit-scrollbar-thumb {
+    background: var(--green-1);
+    border-radius: 10px;
+}
+
+.comment-item {
+    font-size: 0.7rem;
+    color: #5a6e5f;
+    padding: 4px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #edf2eb;
+}
+
+.comment-item:last-child { border-bottom: none; }
+
+.comment-text { flex: 1; }
+
+.comment-author {
+    font-weight: 700;
+    color: var(--green-3);
+    margin-right: 5px;
+}
+
+.comment-time {
+    font-size: 0.6rem;
+    color: #9ca3af;
+    margin-left: 5px;
+}
+
+.comment-input-wrapper {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.comment-input {
+    flex: 1;
+    padding: 5px 8px;
+    border-radius: 20px;
+    border: 1px solid #cde2c5;
+    font-size: 0.7rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.comment-input:focus {
+    border-color: var(--green-1);
+    box-shadow: 0 0 0 3px rgba(93, 156, 89, 0.1);
+}
+
+.comment-submit {
+    background: var(--green-1);
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 600;
+    transition: background .2s ease;
+}
+
+.comment-submit:hover { background: var(--green-3); }
+
+.comment-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ====================== RESPONSIVE ====================== */
+@media (max-width: 1200px) {
+    .video-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 992px) {
+    .video-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .dashboard-wrap { padding: 1.2rem; }
+    .dashboard-page-header h1 { font-size: 1.6rem; }
+}
+
+@media (max-width: 600px) {
+    .video-footer {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .video-stats {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+    .video-actions {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 576px) {
+    .video-grid { grid-template-columns: 1fr; }
+    .video-thumbnail { height: 190px; }
+    .btn-action { height: 38px; }
+    .btn-enroll { width: 120px; min-width: 120px; max-width: 120px; }
+    .btn-watch { width: 100px; min-width: 100px; }
+}
+
+/* ============================================================
+   🌙 DARK MODE OVERRIDES
+   ============================================================ */
+[data-theme="dark"] body,
+[data-theme="dark"] .dashboard-wrap {
+    background: #0d1510 !important;
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .dashboard-page-header h1 {
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .dashboard-page-header span {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .video-card {
+    background: #16201a !important;
+    border-color: #263a2e !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4) !important;
+}
+
+[data-theme="dark"] .video-card:hover {
+    box-shadow: 0 18px 40px rgba(0,0,0,.55) !important;
+}
+
+[data-theme="dark"] .video-category {
+    background: #1f3327 !important;
+    color: #a5d6a7 !important;
+}
+
+[data-theme="dark"] .video-title {
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .video-description {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .video-author img {
+    border-color: #263a2e !important;
+}
+
+[data-theme="dark"] .author-name {
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .author-role {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .video-footer {
+    border-top-color: #263a2e !important;
+}
+
+[data-theme="dark"] .video-stat {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .video-stat:hover {
+    color: #a5d6a7 !important;
+}
+
+[data-theme="dark"] .video-stat i {
+    color: #81c784 !important;
+}
+
+[data-theme="dark"] .video-stat.liked i {
+    color: #ef4444 !important;
+}
+
+[data-theme="dark"] .empty-state i {
+    color: #81c784 !important;
+}
+
+[data-theme="dark"] .empty-state p {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .comment-section {
+    border-top-color: #2f4638 !important;
+}
+
+[data-theme="dark"] .comment-item {
+    color: #93a397 !important;
+    border-bottom-color: #263a2e !important;
+}
+
+[data-theme="dark"] .comment-author {
+    color: #a5d6a7 !important;
+}
+
+[data-theme="dark"] .comment-time {
+    color: #6d7f72 !important;
+}
+
+[data-theme="dark"] .comment-input {
+    background: #1b2620 !important;
+    border-color: #2f4638 !important;
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .comment-input::placeholder {
+    color: #6d7f72 !important;
+}
+
+[data-theme="dark"] .comment-list::-webkit-scrollbar-track {
+    background: #14201a !important;
+}
+
+[data-theme="dark"] .comment-empty {
+    color: #6d7f72 !important;
+}
+
+[data-theme="dark"] .remove-comment-btn:hover {
+    background: rgba(239,68,68,.2) !important;
+}
+
+/* 🛡️ GPU safety — disable blur in dark mode */
+[data-theme="dark"] * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+</style>
+
+
+<!-- ============================================================
+     HTML CONTENT
+============================================================ -->
+<div class="dashboard-wrap">
+
+    <!-- ==================== HEADER ==================== -->
+    <div class="dashboard-page-header">
+        <div>
+            <h1>Video Courses</h1>
+            <span>Watch latest educational videos</span>
+        </div>
+    </div>
+
+    <!-- ==================== VIDEO GRID ==================== -->
+    <div class="video-grid">
+        {% for i in course_info %}
+        <div class="video-card" id="course-card-{{ i.id }}">
+
+            <!-- ============ THUMBNAIL ============ -->
+            <div class="video-thumbnail">
+                {% if i.vedio %}
+                <video preload="metadata">
+                    <source src="{{ i.vedio.url }}" type="video/mp4">
+                </video>
+                {% else %}
+                <video preload="metadata" poster="" style="background:linear-gradient(135deg,#2f5233,#5d9c59);"></video>
+                {% endif %}
+                <div class="video-overlay"></div>
+                <a href="{% url 'priview' i.id %}" class="play-btn-overlay">
+                    <i class="fa fa-play"></i>
+                </a>
+                <span class="video-duration">
+                    <i class="fa-regular fa-clock"></i> 12:30
+                </span>
+            </div>
+
+            <!-- ============ CONTENT ============ -->
+            <div class="video-content">
+
+                <!-- Category -->
+                <div class="video-category">
+                    <i class="fa fa-graduation-cap"></i>
+                    {{ i.category }}
+                </div>
+
+                <!-- Title -->
+                <div class="video-title">{{ i.title }}</div>
+
+                <!-- Description -->
+                <div class="video-description">
+                    {{ i.description|truncatechars:100 }}
+                </div>
+
+                <!-- Author -->
+                <div class="video-author">
+                    <img src="https://i.pravatar.cc/100?img=12" alt="Author">
+                    <div>
+                        <div class="author-name">
+                            {{ i.student.get_full_name|default:"Instructor" }}
+                        </div>
+                        <div class="author-role">Instructor</div>
+                    </div>
+                </div>
+
+                <!-- ============ FOOTER: STATS + ACTIONS ============ -->
+                <div class="video-footer">
+
+                    <!-- Stats -->
+                    <div class="video-stats">
+                        <div class="video-stat like-stat"
+                             data-course-id="{{ i.id }}"
+                             data-type="like">
+                            <i class="fa fa-heart"></i>
+                            <span class="like-count">{{ i.likes_count|default:"0" }}</span>
+                        </div>
+                        <div class="video-stat comment-stat"
+                             data-course-id="{{ i.id }}">
+                            <i class="fa fa-comment"></i>
+                            <span class="comment-count">{{ i.comments_count|default:"0" }}</span>
+                        </div>
+                        <div class="video-stat view-stat">
+                            <i class="fa fa-eye"></i>
+                            <span class="view-count">{{ i.view_count|default:"0" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="video-actions">
+
+                        <!-- ✅ Enroll — ONLY for logged-in users -->
+                        {% if user.is_authenticated %}
+                        <button type="button"
+                                class="btn-action btn-enroll {% if i.is_enrolled %}enrolled{% endif %}"
+                                data-course-id="{{ i.id }}"
+                                data-enrolled="{% if i.is_enrolled %}true{% else %}false{% endif %}"
+                                data-url="{% url 'enroll_course' i.id %}">
+                            <i class="fa fa-graduation-cap"></i>
+                            <span class="enroll-text">
+                                {% if i.is_enrolled %}✓ Enrolled{% else %}Enroll{% endif %}
+                            </span>
+                        </button>
+                        {% endif %}
+
+                        <!-- Watch (everyone can watch) -->
+                        <a href="{% url 'priview' i.id %}" class="btn-action btn-watch">
+                            <i class="fa fa-play"></i>
+                            Watch
+                        </a>
+
+                        <!-- Delete (staff only) -->
+                        {% if request.user.is_staff %}
+                        <a href="{% url 'delet_course' i.id %}"
+                           class="btn-action btn-delete"
+                           onclick="return confirm('Are you sure you want to delete this course?')">
+                            <i class="fa fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- ============ COMMENT SECTION ============ -->
+                <div class="comment-section"
+                     id="comment-section-{{ i.id }}"
+                     style="display:none;">
+
+                    <div class="comment-list" id="comment-list-{{ i.id }}">
+                        {% for comment in i.comments.all %}
+                            {% if forloop.counter <= 5 %}
+                            <div class="comment-item" data-comment-id="{{ comment.id }}">
+                                <div class="comment-text">
+                                    <span class="comment-author">
+                                        {{ comment.user.get_full_name|default:comment.user.username }}:
+                                    </span>
+                                    {{ comment.text }}
+                                    <span class="comment-time">
+                                        {{ comment.created_at|date:"H:i" }}
+                                    </span>
+                                </div>
+                                {% if request.user == comment.user or request.user.is_staff %}
+                                <button class="remove-comment-btn"
+                                        data-comment-id="{{ comment.id }}">
+                                    <i class="fa fa-times-circle"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="comment-item comment-empty"
+                                 style="color:#9ca3af; font-style:italic; justify-content:center;">
+                                No comments yet. Be the first!
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if request.user.is_authenticated %}
+                    <div class="comment-input-wrapper">
+                        <input type="text"
+                               class="comment-input"
+                               placeholder="Write a comment..."
+                               id="comment-input-{{ i.id }}">
+                        <button class="comment-submit" data-course-id="{{ i.id }}">
+                            Send
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fa fa-video"></i>
+            <p>No courses available yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     CSRF TOKEN (for AJAX)
+============================================================ -->
+{% csrf_token %}
+
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+function getCSRFToken() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (el && el.value) return el.value;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/* 1. LIKE */
+document.querySelectorAll('.like-stat').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const courseId = this.dataset.courseId;
+        const likeSpan = this.querySelector('.like-count');
+        const icon = this.querySelector('i');
+
+        fetch(`/like-course/${courseId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'liked') {
+                likeSpan.textContent = data.likes;
+                icon.style.color = '#dc2626';
+                this.classList.add('liked');
+            } else if (data.status === 'unliked') {
+                likeSpan.textContent = data.likes;
+                icon.style.color = '#5d9c59';
+                this.classList.remove('liked');
+            }
+        })
+        .catch(err => console.error('Like error:', err));
+    });
+});
+
+/* 2. ENROLL (only exists if user logged in) */
+document.querySelectorAll('.btn-enroll').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        if (this.dataset.enrolled === 'true') {
+            alert('You are already enrolled in this course!');
+            return;
+        }
+        if (this.dataset.submitting === 'true') return;
+
+        this.dataset.submitting = 'true';
+        const url = this.dataset.url;
+        const textSpan = this.querySelector('.enroll-text');
+        const originalHTML = textSpan.innerHTML;
+        textSpan.innerHTML = '...';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => {
+            if (r.redirected || r.ok) return { status: 'success' };
+            return r.json();
+        })
+        .then(() => {
+            this.classList.add('enrolled');
+            this.dataset.enrolled = 'true';
+            textSpan.innerHTML = '✓ Enrolled';
+        })
+        .catch(err => {
+            console.error('Enroll error:', err);
+            textSpan.innerHTML = originalHTML;
+        })
+        .finally(() => {
+            this.dataset.submitting = 'false';
+        });
+    });
+});
+
+/* 3. TOGGLE COMMENTS */
+document.querySelectorAll('.comment-stat').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const courseId = this.dataset.courseId;
+        const section = document.getElementById(`comment-section-${courseId}`);
+        if (!section) return;
+
+        if (section.style.display === 'none' || section.style.display === '') {
+            section.style.display = 'block';
+            setTimeout(() => {
+                section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        } else {
+            section.style.display = 'none';
+        }
+    });
+});
+
+/* 4. SUBMIT COMMENT */
+document.querySelectorAll('.comment-submit').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const courseId = this.dataset.courseId;
+        const input = document.getElementById(`comment-input-${courseId}`);
+        const text = input.value.trim();
+        if (!text) return;
+
+        this.disabled = true;
+        const oldLabel = this.textContent;
+        this.textContent = '...';
+
+        fetch(`/add-comment/${courseId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: text })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                alert(data.error || 'Error sending comment');
+                return;
+            }
+
+            const list = document.getElementById(`comment-list-${courseId}`);
+            const emptyMsg = list.querySelector('.comment-empty');
+            if (emptyMsg) emptyMsg.remove();
+
+            const newComment = document.createElement('div');
+            newComment.className = 'comment-item';
+            newComment.dataset.commentId = data.comment_id;
+            newComment.innerHTML = `
+                <div class="comment-text">
+                    <span class="comment-author">${escapeHtml(data.author)}:</span>
+                    ${escapeHtml(text)}
+                    <span class="comment-time">just now</span>
+                </div>
+                <button class="remove-comment-btn" data-comment-id="${data.comment_id}">
+                    <i class="fa fa-times-circle"></i>
+                </button>
+            `;
+            list.insertAdjacentElement('afterbegin', newComment);
+            input.value = '';
+
+            const countSpan = document.querySelector(
+                `.comment-stat[data-course-id="${courseId}"] .comment-count`
+            );
+            if (countSpan) {
+                countSpan.textContent = (parseInt(countSpan.textContent) || 0) + 1;
+            }
+
+            const items = list.querySelectorAll('.comment-item:not(.comment-empty)');
+            if (items.length > 5) {
+                items[items.length - 1].remove();
+            }
+        })
+        .catch(err => console.error('Comment error:', err))
+        .finally(() => {
+            this.disabled = false;
+            this.textContent = oldLabel;
+        });
+    });
+});
+
+/* 5. REMOVE COMMENT */
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.remove-comment-btn');
+    if (!btn) return;
+    e.stopPropagation();
+
+    const commentId = btn.dataset.commentId;
+    const item = btn.closest('.comment-item');
+    const section = item.closest('.comment-section');
+    const courseId = section.id.replace('comment-section-', '');
+
+    if (!confirm('Delete this comment?')) return;
+
+    fetch(`/remove-comment/${commentId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status !== 'removed') return;
+        item.remove();
+
+        const countSpan = document.querySelector(
+            `.comment-stat[data-course-id="${courseId}"] .comment-count`
+        );
+        if (countSpan) {
+            countSpan.textContent = Math.max(
+                0, (parseInt(countSpan.textContent) || 0) - 1
+            );
+        }
+
+        const list = document.getElementById(`comment-list-${courseId}`);
+        if (!list.querySelector('.comment-item')) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.className = 'comment-item comment-empty';
+            emptyMsg.style.color = '#9ca3af';
+            emptyMsg.style.fontStyle = 'italic';
+            emptyMsg.style.justifyContent = 'center';
+            emptyMsg.textContent = 'No comments yet. Be the first!';
+            list.appendChild(emptyMsg);
+        }
+    })
+    .catch(err => console.error('Remove error:', err));
+});
+
+/* 6. ENTER KEY = SUBMIT COMMENT */
+document.querySelectorAll('.comment-input').forEach(input => {
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const btn = this.closest('.comment-input-wrapper')
+                .querySelector('.comment-submit');
+            if (btn) btn.click();
+        }
+    });
+});
+
+/* 7. RESTORE LIKED STATE */
+document.querySelectorAll('.like-stat').forEach(stat => {
+    const courseId = stat.dataset.courseId;
+    fetch(`/get-like-status/${courseId}/`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.is_liked) {
+                stat.querySelector('i').style.color = '#dc2626';
+                stat.classList.add('liked');
+            }
+        })
+        .catch(() => {});
+});
+</script>
+
+{% endblock %}
+
+
+{% block footer %}
+    {% include 'footer.html' %}
+{% endblock %}

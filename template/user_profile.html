@@ -1,0 +1,1367 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduFlow Dashboard | Course Management</title>
+
+  <script>
+  (function () {
+      try {
+          var saved = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+      } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+      }
+  })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Plus Jakarta Sans',sans-serif; background:#f5f8f4; color:#18311f; }
+    :root{
+      --primary:#18311f; --secondary:#5d9c59; --secondary-dark:#2f5233;
+      --light:#f5f8f4; --text:#6c7d70; --border:#dce8d8;
+      --danger:#dc2626; --warning:#eab308; --info:#3b82f6;
+      --shadow-sm:0 4px 12px rgba(0,0,0,0.05); --shadow-md:0 12px 30px rgba(0,0,0,0.08); --transition:0.3s ease;
+    }
+    .dashboard{ max-width:1400px; margin:auto; padding:2rem; }
+    .header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+    .header h1{ font-size:2rem; font-weight:800; }
+    .header p{ color:var(--text); margin-top:5px; }
+    .header-actions{ display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+    .header-left { display: flex; align-items: center; gap: 1.5rem; flex-wrap:wrap; }
+
+    .back-btn { display:inline-flex; align-items:center; gap:8px; color:var(--text); cursor:pointer; font-size:0.85rem; font-weight:600; padding:0.5rem 1rem; border-radius:999px; background:white; border:1px solid var(--border); transition:background .2s ease, color .2s ease, border-color .2s ease; text-decoration:none; }
+    .back-btn:hover { background:var(--secondary); color:white; border-color:var(--secondary); }
+
+    .btn{ border:none; outline:none; cursor:pointer; padding:0.7rem 1.2rem; border-radius:999px; font-weight:700; display:inline-flex; align-items:center; gap:8px; transition:background .2s ease, color .2s ease, box-shadow .2s ease; font-size:0.8rem; text-decoration:none; }
+    .btn-primary{ background:var(--secondary); color:white; }
+    .btn-primary:hover{ background:var(--secondary-dark); }
+    .btn-outline{ background:transparent; border:2px solid var(--secondary); color:var(--secondary); }
+    .btn-outline:hover{ background:var(--secondary); color:white; }
+    .btn-warning{ background:var(--warning); color:#422006; }
+    .btn-warning:hover{ background:#eab308; }
+    .btn-line { background: transparent; border: 1px solid var(--secondary); color: var(--secondary); padding: 0.25rem 0.75rem; font-size: 0.65rem; border-radius: 999px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: background .2s ease, color .2s ease; }
+    .btn-line:hover { background: var(--secondary); color: white; }
+    .btn-line.published { background: var(--secondary); color: white; opacity:.7; cursor:default; }
+
+    .profile-card{ background:#ffffff; border-radius:30px; overflow:hidden; margin-bottom:2rem; box-shadow:var(--shadow-md); }
+    .cover{ height:100px; background:linear-gradient(135deg, var(--primary), var(--secondary-dark), var(--secondary)); }
+    .profile-content{ padding:0 2rem 1.2rem; margin-top:-45px; display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; }
+    .profile-left{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+    .avatar-wrapper { position:relative; flex-shrink:0; }
+    .avatar { width:80px; height:80px; border-radius:50%; padding:3px; background:white; box-shadow:var(--shadow-md); position:relative; cursor:default; }
+    .avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; }
+    .avatar-upload-btn { position:absolute; bottom:2px; right:2px; background:var(--secondary); color:white; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.7rem; cursor:pointer; border:2px solid white; transition:background .2s ease; box-shadow:0 2px 8px rgba(0,0,0,0.15); z-index:2; }
+    .avatar-upload-btn:hover { background:var(--secondary-dark); }
+
+    .profile-info { min-width:0; }
+    .profile-info .display-name { font-size:1.5rem; font-weight:800; color:var(--primary); line-height:1.25; overflow-wrap:anywhere; }
+    .badge{ margin-top:5px; display:inline-flex; align-items:center; gap:6px; background:#ebf7e7; color:var(--secondary-dark); padding:0.25rem 0.8rem; border-radius:999px; font-size:0.7rem; font-weight:700; }
+
+    .grid{ display:grid; grid-template-columns:280px 1fr; gap:1.5rem; }
+    .card{ background:white; border-radius:24px; padding:1rem; box-shadow:var(--shadow-sm); }
+    .card-title{ font-size:1rem; font-weight:800; margin-bottom:0.8rem; display:flex; align-items:center; gap:6px; }
+
+    .info-item{ display:flex; gap:0.7rem; padding:0.6rem 0; border-bottom:1px solid #edf2eb; }
+    .info-item:last-child{ border-bottom:none; }
+    .info-icon{ width:32px; height:32px; border-radius:50%; background:#eef7ea; display:flex; align-items:center; justify-content:center; color:var(--secondary); font-size:0.8rem; }
+    .info-label{ font-size:0.6rem; text-transform:uppercase; font-weight:800; color:var(--text); margin-bottom:2px; }
+    .info-value{ font-weight:600; font-size:0.8rem; }
+
+    .course-list{ display:flex; flex-direction:column; gap:0.6rem; max-height:600px; overflow-y:auto; padding-right:5px; }
+    .course-list::-webkit-scrollbar { width:4px; }
+    .course-list::-webkit-scrollbar-track { background:#e8f0e5; border-radius:10px; }
+    .course-list::-webkit-scrollbar-thumb { background:var(--secondary); border-radius:10px; }
+
+    .premium-course-card { background:white; border-radius:28px; padding:1.8rem; box-shadow:var(--shadow-md); }
+    .premium-title { font-size:1.5rem !important; font-weight:800; margin-bottom:1.8rem !important; display:flex; align-items:center; gap:12px; color:var(--primary); letter-spacing:-0.3px; }
+    .course-count-badge { font-size:0.85rem; font-weight:600; background:linear-gradient(135deg, #eef7ea, #e0ecd9); padding:6px 14px; border-radius:40px; color:var(--secondary-dark); display:inline-flex; align-items:center; gap:8px; }
+    .premium-list { display:flex; flex-direction:column; gap:1.2rem; }
+
+    .premium-item { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.2rem; border-radius:24px; border:1px solid #e8f0e4; background:white; transition:box-shadow .25s ease, border-color .25s ease; }
+    .premium-item:hover { box-shadow:0 12px 28px -8px rgba(47,82,51,0.12); border-color:var(--secondary); }
+
+    .course-thumb-wrapper { position:relative; flex-shrink:0; }
+    .premium-thumb { width:120px; height:80px; border-radius:18px; object-fit:cover; background:linear-gradient(135deg, #2f5233, #5d9c59); box-shadow:0 6px 14px rgba(0,0,0,0.08); }
+    .premium-details { flex:1; }
+    .premium-top { display:flex; align-items:center; gap:0.8rem; margin-bottom:0.6rem; flex-wrap:wrap; }
+    .premium-category { background:#eef7ea; color:#2f5233; padding:5px 12px; border-radius:30px; font-size:0.75rem; font-weight:700; letter-spacing:0.3px; }
+    .premium-course-title { font-size:1.15rem !important; font-weight:800; color:var(--primary); margin-bottom:0.5rem; letter-spacing:-0.2px; line-height:1.4; }
+    .premium-description { color:#5a6e5f; font-size:0.85rem !important; line-height:1.55; margin-bottom:0.7rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .premium-meta { display:flex; gap:1.2rem; flex-wrap:wrap; }
+    .meta-item { display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:600; color:#6b8270; background:#f5faf3; padding:4px 10px; border-radius:30px; }
+    .price-tag { color:#2f5233; background:#e8f3e4; font-weight:700; }
+    .premium-actions { display:flex; gap:0.6rem; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+
+    .action-btn { padding:0.5rem 1rem; border-radius:40px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; text-decoration:none; transition:background .2s ease, color .2s ease; border:1px solid transparent; cursor:pointer; }
+    .edit-btn { background:#eef2ff; color:#4f46e5; border-color:#c7d2fe; }
+    .edit-btn:hover { background:#c7d2fe; }
+    .delete-btn { background:#fef2f2; color:#dc2626; border-color:#fecaca; }
+    .delete-btn:hover { background:#fee2e2; }
+    .playlist-btn { background:#ede9fe; color:#5b21b6; border-color:#c4b5fd; }
+    .playlist-btn:hover { background:#ddd6fe; }
+    .quiz-btn { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+    .quiz-btn:hover { background:#fde68a; }
+
+    .premium-empty { text-align:center; padding:3rem 2rem; background:#fafdf8; border-radius:28px; border:2px dashed #cde2c5; }
+    .premium-empty i { font-size:3rem; color:var(--secondary); opacity:0.6; margin-bottom:1rem; display:inline-block; }
+    .premium-empty p { font-size:1rem; color:var(--text); font-weight:500; }
+
+    .student-course-item { display:flex; align-items:center; gap:1rem; padding:0.8rem 1rem; border-radius:16px; border:1px solid #edf2eb; background:white; transition:box-shadow .2s ease, border-color .2s ease; }
+    .student-course-item:hover { box-shadow:var(--shadow-sm); border-color:var(--secondary); }
+    .student-course-thumb { width:80px; height:60px; border-radius:12px; object-fit:cover; background:linear-gradient(135deg, #2f5233, #5d9c59); }
+    .student-course-info { flex:1; }
+    .student-course-title { font-size:0.95rem; font-weight:700; color:var(--primary); margin-bottom:0.3rem; }
+    .student-course-meta { display:flex; gap:1rem; flex-wrap:wrap; }
+    .student-course-meta span { font-size:0.7rem; color:var(--text); display:inline-flex; align-items:center; gap:4px; }
+    .enrolled-badge { background:#dbeafe; color:#1e40af; padding:2px 10px; border-radius:999px; font-size:0.65rem; font-weight:700; }
+    .student-playlist-btn { background:#e0f2fe; color:#0369a1; border-color:#bae6fd; }
+    .student-playlist-btn:hover { background:#bae6fd; }
+
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0.3s ease; z-index:1000; }
+    .modal.active{ opacity:1; visibility:visible; }
+    .modal-box{ width:95%; max-width:600px; background:white; border-radius:28px; padding:1.5rem; max-height:90vh; overflow-y:auto; }
+    .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
+    .modal-header h2{ font-size:1.2rem; display:flex; align-items:center; gap:8px; }
+    .close-modal{ width:34px; height:34px; border:none; border-radius:10px; cursor:pointer; background:#f1f5f9; transition:background .2s ease; }
+    .close-modal:hover{ background:#e2e8f0; }
+
+    .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; }
+    .form-group{ display:flex; flex-direction:column; gap:5px; }
+    .full{ grid-column:1/-1; }
+    label{ font-size:0.65rem; font-weight:800; text-transform:uppercase; color:var(--text); }
+    input, textarea, select{ width:100%; border:1px solid var(--border); padding:0.6rem 0.8rem; border-radius:12px; font-family:inherit; transition:border-color .2s ease, box-shadow .2s ease; font-size:0.8rem; }
+    input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--secondary); box-shadow:0 0 0 3px rgba(93,156,89,0.1); }
+    textarea{ resize:none; }
+
+    .toast{ position:fixed; bottom:30px; right:30px; background:var(--primary); color:white; padding:0.7rem 1.2rem; border-radius:999px; display:flex; align-items:center; gap:8px; box-shadow:var(--shadow-md); opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0.3s ease; z-index:1100; font-size:0.8rem; }
+    .toast.show{ opacity:1; visibility:visible; }
+
+    .playlist-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); opacity:0; visibility:hidden; transition:opacity 0.3s ease, visibility 0.3s ease; z-index:999; }
+    .playlist-overlay.active { opacity:1; visibility:visible; }
+    .playlist-sidebar { position:fixed; top:0; right:-420px; width:400px; max-width:90vw; height:100vh; background:white; box-shadow:-8px 0 30px rgba(0,0,0,0.1); transition:right 0.35s ease; z-index:1001; padding:1.5rem 1.2rem; overflow-y:auto; display:flex; flex-direction:column; }
+    .add-video-btn.is-disabled { opacity:.5; cursor:not-allowed; }
+    .add-video-btn { text-decoration:none; }
+
+    .playlist-sidebar.open { right:0; }
+    .owner-note {
+      margin-top:0.5rem; font-size:0.72rem; color:#7a887f; text-align:center;
+      background:#f4f7f1; border:1px dashed #d5e0d3; border-radius:12px; padding:0.55rem 0.7rem; line-height:1.5;
+    }
+    [data-theme="dark"] .owner-note { background:#16201a !important; color:#93a397 !important; border-color:#2c3b31 !important; }
+    .playlist-header { display:flex; justify-content:space-between; align-items:center; padding-bottom:1rem; border-bottom:2px solid #f0f4ee; margin-bottom:1.2rem; }
+    .playlist-header h3 { font-size:1.2rem; font-weight:800; display:flex; align-items:center; gap:8px; color:var(--primary); }
+    .close-playlist { width:34px; height:34px; border:none; border-radius:10px; cursor:pointer; background:#f1f5f9; transition:background .2s ease; font-size:1rem; }
+    .close-playlist:hover { background:#e2e8f0; }
+    .playlist-item { display:flex; align-items:center; gap:0.8rem; padding:0.7rem 0.6rem; border-bottom:1px solid #edf2eb; transition:background .2s ease; border-radius:12px; }
+    .playlist-item:hover { background:#f8faf7; }
+    .playlist-item .thumb { width:55px; height:42px; border-radius:10px; object-fit:cover; background:linear-gradient(135deg, #2f5233, #5d9c59); flex-shrink:0; display:flex; align-items:center; justify-content:center; color:white; font-size:1rem; }
+    .playlist-item .info { flex:1; min-width:0; }
+    .playlist-item .info h4 { font-size:0.8rem; font-weight:700; color:var(--primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .playlist-item .play-btn { background:var(--secondary); color:white; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; transition:background .2s ease; display:flex; align-items:center; justify-content:center; font-size:0.7rem; flex-shrink:0; text-decoration:none; }
+    .playlist-item .play-btn:hover { background:var(--secondary-dark); }
+    .playlist-empty { text-align:center; padding:2rem 0; color:var(--text); }
+    .playlist-empty i { font-size:2.5rem; opacity:0.4; margin-bottom:0.5rem; }
+    .playlist-sidebar::-webkit-scrollbar { width:4px; }
+    .playlist-sidebar::-webkit-scrollbar-track { background:#e8f0e5; border-radius:10px; }
+    .playlist-sidebar::-webkit-scrollbar-thumb { background:var(--secondary); border-radius:10px; }
+    .playlist-footer { margin-top:auto; padding-top:1rem; border-top:1px solid #edf2eb; font-size:0.75rem; color:var(--text); text-align:center; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+
+    .playlist-section-title { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--text); padding:0.8rem 0.4rem 0.5rem; margin-top:0.5rem; border-top:1px solid #eef4e9; }
+    .playlist-section-title:first-child { border-top:none; margin-top:0; padding-top:0; }
+    .playlist-item.quiz-item .thumb { background:linear-gradient(135deg, #eab308, #ca8a04); }
+    .playlist-item.quiz-item .play-btn.quiz-play { background:linear-gradient(135deg, #eab308, #ca8a04); }
+    .playlist-item.quiz-item .play-btn.quiz-play:hover { background:linear-gradient(135deg, #ca8a04, #a16207); }
+
+    .add-video-btn { background:var(--secondary); color:white; border:none; padding:0.4rem 1rem; border-radius:999px; font-weight:600; font-size:0.7rem; cursor:pointer; transition:background .2s ease; display:inline-flex; align-items:center; gap:5px; }
+    .add-video-btn:hover { background:var(--secondary-dark); }
+
+    .file-input-wrapper { display:flex; align-items:center; gap:0.5rem; width:100%; margin-top:0.5rem; padding:0.5rem; background:#f8faf7; border-radius:16px; border:2px dashed var(--border); transition:border-color .2s ease, background .2s ease; }
+    .file-input-wrapper:hover { border-color:var(--secondary); background:#f0f7ee; }
+    .file-input-wrapper input[type="file"] { flex:1; padding:0.3rem; font-size:0.75rem; border:none; background:transparent; }
+    .file-input-wrapper input[type="file"]::file-selector-button { background:var(--secondary); color:white; border:none; padding:0.3rem 1rem; border-radius:999px; font-weight:600; font-size:0.7rem; cursor:pointer; transition:background .2s ease; }
+    .file-input-wrapper input[type="file"]::file-selector-button:hover { background:var(--secondary-dark); }
+    .file-input-wrapper .file-name { font-size:0.7rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+    .file-upload-actions { display:flex; gap:0.5rem; margin-top:0.5rem; justify-content:flex-end; }
+    .file-upload-actions button { padding:0.3rem 1rem; border-radius:999px; font-weight:600; font-size:0.7rem; cursor:pointer; border:none; transition:background .2s ease; }
+    .file-upload-actions .upload-confirm { background:var(--secondary); color:white; }
+    .file-upload-actions .upload-confirm:hover { background:var(--secondary-dark); }
+    .file-upload-actions .upload-cancel { background:#f1f5f9; color:#6b7280; }
+    .file-upload-actions .upload-cancel:hover { background:#e5e7eb; }
+
+    .video-player-container { margin-bottom:1rem; border-radius:16px; overflow:hidden; background:#0a0a0a; position:relative; }
+    .video-player-container video { width:100%; display:block; max-height:220px; object-fit:contain; }
+    .video-player-container .video-title { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.7)); color:white; padding:1.5rem 1rem 0.6rem; font-size:0.75rem; font-weight:600; pointer-events:none; }
+    .video-player-container .close-video { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.6); color:white; border:none; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:0.7rem; transition:background .2s ease; display:flex; align-items:center; justify-content:center; }
+    .video-player-container .close-video:hover { background:rgba(255,0,0,0.7); }
+    .video-player-container.hidden { display:none; }
+
+    .side-col { display:flex; flex-direction:column; gap:1.5rem; min-width:0; }
+    .main-col { min-width:0; }
+    .avatar-form { display:inline; margin:0; padding:0; }
+    .status-pill { display:inline-flex; align-items:center; gap:7px; padding:0.55rem 1.1rem; border-radius:999px; font-size:0.75rem; font-weight:700; background:#eef7ea; color:var(--secondary-dark); border:1px solid #d8e9d4; }
+    .status-pill.pending { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+    .status-pill.rejected { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+
+    .stat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:0.6rem; }
+    .stat-box { background:#f5faf3; border:1px solid #e8f0e4; border-radius:16px; padding:0.7rem 0.8rem; }
+    .stat-box.wide { grid-column:1 / -1; }
+    .stat-num { font-size:1.25rem; font-weight:800; color:var(--primary); line-height:1.2; }
+    .stat-label { font-size:0.6rem; font-weight:800; text-transform:uppercase; color:var(--text); letter-spacing:0.4px; margin-top:2px; }
+
+    .thumb-play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:1.1rem; text-shadow:0 2px 8px rgba(0,0,0,0.4); pointer-events:none; }
+    .draft-chip { position:absolute; top:6px; left:6px; background:rgba(234,179,8,0.95); color:#422006; font-size:0.55rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; padding:3px 7px; border-radius:999px; }
+
+    .field-error { color:var(--danger); font-size:0.65rem; font-weight:700; text-transform:none; margin-top:2px; }
+    .modal-error { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:12px; padding:0.6rem 0.8rem; font-size:0.75rem; font-weight:600; margin-bottom:0.8rem; }
+    .modal-error ul { margin:0.3rem 0 0 1rem; }
+
+    .form-hint { font-size:0.6rem; color:var(--text); font-weight:600; }
+    .quiz-meta { font-size:0.62rem; color:var(--text); margin-top:2px; font-weight:600; }
+    .playlist-item .info { display:flex; flex-direction:column; min-width:0; }
+    .playlist-item.quiz-item .info h4 { white-space:normal; }
+
+    .premium-item { flex-wrap:wrap; }
+    .premium-details { min-width:0; }
+    .premium-actions { margin-left:auto; }
+
+    @media(max-width:800px){
+      .grid{ grid-template-columns:1fr; }
+      .form-grid{ grid-template-columns:1fr; }
+      .premium-item{ flex-direction:column; align-items:stretch; }
+      .premium-thumb{ width:100%; height:140px; }
+      .premium-actions{ justify-content:flex-end; margin-top:0.5rem; }
+      .toast{ left:20px; right:20px; bottom:20px; }
+    }
+
+    [data-theme="dark"] body { background:#0d1510 !important; color:#e4ede6 !important; }
+    [data-theme="dark"] .header h1 { color:#e4ede6 !important; }
+    [data-theme="dark"] .header p { color:#93a397 !important; }
+    [data-theme="dark"] .back-btn { background:#16201a !important; border-color:#263a2e !important; color:#93a397 !important; }
+    [data-theme="dark"] .back-btn:hover { background:var(--secondary) !important; color:white !important; }
+    [data-theme="dark"] .btn-outline { color:#a5d6a7 !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .btn-outline:hover { background:var(--secondary) !important; border-color:var(--secondary) !important; color:white !important; }
+    [data-theme="dark"] .btn-line { color:#a5d6a7 !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .btn-line:hover { background:var(--secondary) !important; color:white !important; }
+    [data-theme="dark"] .profile-card { background:#16201a !important; box-shadow:0 12px 30px rgba(0,0,0,.5) !important; }
+    [data-theme="dark"] .avatar { background:#16201a !important; }
+    [data-theme="dark"] .avatar-upload-btn { border-color:#16201a !important; }
+    [data-theme="dark"] .badge { background:#1f3327 !important; color:#a5d6a7 !important; }
+    [data-theme="dark"] .card, [data-theme="dark"] .premium-course-card { background:#16201a !important; box-shadow:0 4px 12px rgba(0,0,0,.4) !important; }
+    [data-theme="dark"] .card-title, [data-theme="dark"] .premium-title { color:#e4ede6 !important; }
+    [data-theme="dark"] .info-item { border-bottom-color:#263a2e !important; }
+    [data-theme="dark"] .info-icon { background:#1f3327 !important; color:#a5d6a7 !important; }
+    [data-theme="dark"] .info-label { color:#93a397 !important; }
+    [data-theme="dark"] .info-value { color:#e4ede6 !important; }
+    [data-theme="dark"] .course-list::-webkit-scrollbar-track { background:#1f3327 !important; }
+    [data-theme="dark"] .course-list::-webkit-scrollbar-thumb { background:#5d9c59 !important; }
+    [data-theme="dark"] .course-count-badge { background:linear-gradient(135deg, #1f3327, #253a2b) !important; color:#a5d6a7 !important; }
+    [data-theme="dark"] .premium-item, [data-theme="dark"] .student-course-item { background:#1b2620 !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .premium-item:hover, [data-theme="dark"] .student-course-item:hover { border-color:var(--secondary) !important; }
+    [data-theme="dark"] .premium-category { background:#1f3327 !important; color:#a5d6a7 !important; }
+    [data-theme="dark"] .premium-course-title, [data-theme="dark"] .student-course-title { color:#e4ede6 !important; }
+    [data-theme="dark"] .premium-description { color:#93a397 !important; }
+    [data-theme="dark"] .meta-item { background:#1f3327 !important; color:#a5d6a7 !important; }
+    [data-theme="dark"] .price-tag { background:#253a2b !important; color:#a3e635 !important; }
+    [data-theme="dark"] .edit-btn { background:rgba(79,70,229,.15) !important; color:#a5b4fc !important; border-color:rgba(79,70,229,.4) !important; }
+    [data-theme="dark"] .delete-btn { background:rgba(220,38,38,.15) !important; color:#fca5a5 !important; border-color:rgba(220,38,38,.4) !important; }
+    [data-theme="dark"] .playlist-btn { background:rgba(139,92,246,.15) !important; color:#c4b5fd !important; border-color:rgba(139,92,246,.4) !important; }
+    [data-theme="dark"] .quiz-btn { background:rgba(234,179,8,.15) !important; color:#fde047 !important; border-color:rgba(234,179,8,.4) !important; }
+    [data-theme="dark"] .student-playlist-btn { background:rgba(14,165,233,.15) !important; color:#7dd3fc !important; border-color:rgba(14,165,233,.4) !important; }
+    [data-theme="dark"] .enrolled-badge { background:rgba(59,130,246,.15) !important; color:#93c5fd !important; }
+    [data-theme="dark"] .premium-empty { background:#14201a !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .premium-empty p { color:#93a397 !important; }
+    [data-theme="dark"] .student-course-meta span { color:#93a397 !important; }
+    [data-theme="dark"] .profile-info .display-name { color:#e4ede6 !important; }
+    [data-theme="dark"] .status-pill { background:#1f3327 !important; color:#a5d6a7 !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .status-pill.pending { background:rgba(234,179,8,.15) !important; color:#fde047 !important; border-color:rgba(234,179,8,.4) !important; }
+    [data-theme="dark"] .status-pill.rejected { background:rgba(220,38,38,.15) !important; color:#fca5a5 !important; border-color:rgba(220,38,38,.4) !important; }
+    [data-theme="dark"] .stat-box { background:#1b2620 !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .stat-num { color:#e4ede6 !important; }
+    [data-theme="dark"] .field-error { color:#fca5a5 !important; }
+    [data-theme="dark"] .modal-error { background:rgba(220,38,38,.12) !important; color:#fca5a5 !important; border-color:rgba(220,38,38,.4) !important; }
+    [data-theme="dark"] .quiz-meta { color:#93a397 !important; }
+    [data-theme="dark"] .modal-box { background:#16201a !important; }
+    [data-theme="dark"] .modal-header h2 { color:#e4ede6 !important; }
+    [data-theme="dark"] .close-modal { background:#1b2620 !important; color:#93a397 !important; }
+    [data-theme="dark"] .close-modal:hover { background:#1f2c24 !important; }
+    [data-theme="dark"] label { color:#93a397 !important; }
+    [data-theme="dark"] input, [data-theme="dark"] textarea, [data-theme="dark"] select { background:#1b2620 !important; border-color:#2f4638 !important; color:#e4ede6 !important; }
+    [data-theme="dark"] input::placeholder, [data-theme="dark"] textarea::placeholder { color:#6d7f72 !important; }
+    [data-theme="dark"] input:focus, [data-theme="dark"] textarea:focus, [data-theme="dark"] select:focus { background:#1f2c24 !important; border-color:var(--secondary) !important; }
+    [data-theme="dark"] .playlist-sidebar { background:#16201a !important; box-shadow:-8px 0 30px rgba(0,0,0,.5) !important; }
+    [data-theme="dark"] .playlist-header { border-bottom-color:#263a2e !important; }
+    [data-theme="dark"] .playlist-header h3 { color:#e4ede6 !important; }
+    [data-theme="dark"] .close-playlist { background:#1b2620 !important; color:#93a397 !important; }
+    [data-theme="dark"] .close-playlist:hover { background:#1f2c24 !important; }
+    [data-theme="dark"] .playlist-item { border-bottom-color:#263a2e !important; }
+    [data-theme="dark"] .playlist-item:hover { background:#1f2c24 !important; }
+    [data-theme="dark"] .playlist-item .info h4 { color:#e4ede6 !important; }
+    [data-theme="dark"] .playlist-empty { color:#93a397 !important; }
+    [data-theme="dark"] .playlist-footer { border-top-color:#263a2e !important; color:#93a397 !important; }
+    [data-theme="dark"] .playlist-section-title { color:#93a397 !important; border-top-color:#263a2e !important; }
+    [data-theme="dark"] .file-input-wrapper { background:#1b2620 !important; border-color:#2f4638 !important; }
+    [data-theme="dark"] .file-input-wrapper:hover { border-color:var(--secondary) !important; background:#1f2c24 !important; }
+    [data-theme="dark"] .file-input-wrapper .file-name { color:#93a397 !important; }
+    [data-theme="dark"] .file-upload-actions .upload-cancel { background:#1b2620 !important; color:#93a397 !important; }
+    [data-theme="dark"] .file-upload-actions .upload-cancel:hover { background:#1f2c24 !important; }
+    [data-theme="dark"] #addVideoForm { background:#1b2620 !important; }
+    [data-theme="dark"] .playlist-sidebar::-webkit-scrollbar-track { background:#1f3327 !important; }
+    [data-theme="dark"] .playlist-sidebar::-webkit-scrollbar-thumb { background:var(--secondary) !important; }
+    [data-theme="dark"] * { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+
+  <div class="header">
+    <div class="header-left">
+      <a href="{% url 'index' %}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      <div>
+        <h1>{% if is_teacher %}Course Portfolio{% else %}My Learning{% endif %}</h1>
+        <p>{% if is_teacher %}Professional instructor dashboard{% else %}Courses you are enrolled in{% endif %}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      {% if info.role == 'student' %}
+        {% if teacher_application.status == 'pending' %}
+          <span class="status-pill pending"><i class="fa-solid fa-clock"></i> Teacher application pending</span>
+        {% elif teacher_application.status == 'approved' %}
+          <span class="status-pill"><i class="fa-solid fa-circle-check"></i> Approved teacher</span>
+        {% elif teacher_application.status == 'rejected' %}
+          <button type="button" class="btn btn-outline" id="applyTeacherBtn"><i class="fa-solid fa-chalkboard-user"></i> Re-apply as Teacher</button>
+        {% else %}
+          <button type="button" class="btn btn-outline" id="applyTeacherBtn"><i class="fa-solid fa-chalkboard-user"></i> Apply as Teacher</button>
+        {% endif %}
+      {% endif %}
+      {% if is_teacher %}
+        <button type="button" class="btn btn-primary" id="openModal"><i class="fa-solid fa-plus"></i> Create Course</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="profile-card">
+    <div class="cover"></div>
+    <div class="profile-content">
+      <div class="profile-left">
+        <form method="POST" enctype="multipart/form-data" action="{% url 'profile_img_view' %}" class="avatar-form" id="avatarForm">
+          {% csrf_token %}
+          <div class="avatar-wrapper">
+            <div class="avatar">
+              <img id="avatarImage" src="{% if profile.picture %}{{ profile.picture.url }}{% else %}https://ui-avatars.com/api/?name={{ info.email|urlencode }}&background=5d9c59&color=fff&size=200{% endif %}" alt="Profile Avatar">
+              <input type="file" name="picture" id="pictureInput" style="display:none;" accept="image/*" onchange="document.getElementById('avatarForm').submit();">
+              <label for="pictureInput" class="avatar-upload-btn" title="Upload profile picture"><i class="fa-solid fa-camera"></i></label>
+            </div>
+          </div>
+        </form>
+        <div class="profile-info">
+          <div class="display-name">{% if info.first_name or info.last_name %}{{ info.first_name }} {{ info.last_name }}{% else %}{{ info.email }}{% endif %}</div>
+          <div class="badge"><i class="fa-solid fa-leaf"></i> {% if is_teacher %}Teacher{% else %}Student{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="side-col">
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-address-card"></i> Personal Info</div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fa-solid fa-user"></i></div>
+          <div><div class="info-label">Full name</div><div class="info-value">{{ info.get_full_name|default:info.email }}</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fa-solid fa-envelope"></i></div>
+          <div><div class="info-label">Email</div><div class="info-value">{{ info.email }}</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fa-solid fa-user-tag"></i></div>
+          <div><div class="info-label">Role</div><div class="info-value">{% if is_teacher %}<span style="color:var(--secondary);">Teacher</span>{% else %}<span style="color:var(--info);">Student</span>{% endif %}</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fa-solid fa-calendar"></i></div>
+          <div><div class="info-label">Member since</div><div class="info-value">{{ info.date_joined|date:"M d, Y" }}</div></div>
+        </div>
+        {% if is_teacher and teacher_application %}
+        <div class="info-item">
+          <div class="info-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div><div class="info-label">Experience</div><div class="info-value">{{ teacher_application.experience|default:"Not provided" }}</div></div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fa-solid fa-bolt"></i></div>
+          <div><div class="info-label">Expertise</div><div class="info-value">{{ teacher_application.get_expertise_display|default:"Not provided" }}</div></div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-chart-simple"></i> {% if is_teacher %}Portfolio stats{% else %}Learning stats{% endif %}</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num">{{ stats.courses }}</div><div class="stat-label">{% if is_teacher %}Courses{% else %}Enrolled{% endif %}</div></div>
+          {% if is_teacher %}
+          <div class="stat-box"><div class="stat-num">{{ stats.published }}</div><div class="stat-label">Published</div></div>
+          <div class="stat-box"><div class="stat-num">{{ stats.drafts }}</div><div class="stat-label">Drafts</div></div>
+          <div class="stat-box"><div class="stat-num">{{ stats.students }}</div><div class="stat-label">Enrolled students</div></div>
+          {% endif %}
+          <div class="stat-box wide"><div class="stat-num">{{ stats.videos }}</div><div class="stat-label">Videos</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="main-col">
+
+    {% if is_teacher %}
+    <div class="card premium-course-card">
+      <div class="card-title premium-title"><i class="fa-solid fa-video" style="color:var(--secondary);"></i> My Courses <span class="course-count-badge"><i class="fa-solid fa-layer-group"></i> {{ data|length }} Courses</span></div>
+      <div class="course-list premium-list" id="courseList">
+        {% for course in data %}
+        <div class="premium-item" data-course-id="{{ course.id }}">
+          <div class="course-thumb-wrapper">
+            {% if course.vedio %}
+            {% if course.vedio %}
+            <video class="premium-thumb" preload="metadata" muted playsinline src="{{ course.vedio.url }}#t=1" onerror="this.style.visibility='hidden';"></video>
+            {% else %}
+            <div class="premium-thumb" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-video" style="color:rgba(255,255,255,.85);font-size:1.4rem;"></i></div>
+            {% endif %}
+            {% endif %}
+            <span class="thumb-play"><i class="fa-solid fa-play"></i></span>
+            {% if not course.is_published %}<span class="draft-chip">Draft</span>{% endif %}
+          </div>
+          <div class="premium-details">
+            <div class="premium-top">
+              <span class="premium-category"><i class="fa-regular fa-folder-open"></i> {{ course.category_display }}</span>
+              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-solid fa-list"></i> {{ course.video_count }} videos</span>
+              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-regular fa-user"></i> {{ course.student_count }} students</span>
+              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-solid fa-circle-question"></i> {{ course.quiz_count }} quizzes</span>
+            </div>
+            <h3 class="premium-course-title">{{ course.title }}</h3>
+            <p class="premium-description">{{ course.description|truncatechars:85 }}</p>
+            <div class="premium-meta">
+              <span class="meta-item"><i class="fa-solid fa-chart-simple"></i> {{ course.level_display }}</span>
+              <span class="meta-item price-tag"><i class="fa-solid fa-dollar-sign"></i> {{ course.Course_price }}</span>
+              <button class="btn btn-line publish-course-btn {% if course.is_published %}published{% endif %}"
+                      type="button"
+                      data-publish-btn
+                      data-course-id="{{ course.id }}"
+                      data-publish-url="{% url 'publish_course' course.id %}"
+                      data-is-published="{{ course.is_published|yesno:'1,0' }}"
+                      title="{% if course.is_published %}Visible to students — click to move back to draft{% else %}Click to publish this course{% endif %}">
+                {% if course.is_published %}
+                  <i class="fas fa-circle-check"></i> Published
+                {% else %}
+                  <i class="fa-solid fa-rocket"></i> Publish
+                {% endif %}
+              </button>
+            </div>
+          </div>
+          <div class="premium-actions">
+            <button type="button" class="action-btn edit-btn" data-edit-btn
+                    data-course-id="{{ course.id }}"
+                    data-title="{{ course.title|escape }}"
+                    data-category="{{ course.category }}"
+                    data-level="{{ course.level }}"
+                    data-price="{{ course.Course_price }}"
+                    data-description="{{ course.description|escape }}">
+              <i class="fa-regular fa-pen-to-square"></i> Edit
+            </button>
+            <a href="{% url 'delet_course' course.id %}" class="action-btn delete-btn"
+               data-confirm="Delete &quot;{{ course.title|escape }}&quot;? This also removes its videos and quizzes.">
+              <i class="fa-regular fa-trash-can"></i> Delete
+            </a>
+            <a href="{% url 'quiz' %}?course_id={{ course.id }}" class="action-btn quiz-btn">
+              <i class="fa-solid fa-circle-question"></i> Quiz
+            </a>
+
+            <button type="button" class="action-btn playlist-btn"
+                    data-playlist-btn
+                    data-course-id="{{ course.id }}"
+                    data-course-title="{{ course.title|escape }}"
+                    data-playlist-url="{% url 'get_playlist_videos' course.id %}"
+                    data-add-video-url="{% url 'add_playlist' course.id %}">
+              <i class="fa-solid fa-list-ul"></i> Playlist
+            </button>
+          </div>
+        </div>
+        {% empty %}
+        <div class="premium-empty">
+          <i class="fa-solid fa-video-slash"></i>
+          <p>You haven't created any courses yet.</p>
+          <p style="font-size:0.72rem;color:#7a887f;margin-top:0.4rem;">
+            Playlists and video uploads live inside a course, so create one first.
+          </p>
+          <button type="button" class="btn btn-primary" id="emptyCreateCourse" style="margin-top:0.8rem;">
+            <i class="fa-solid fa-plus"></i> Create your first course
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not is_teacher %}
+    <div class="card premium-course-card">
+      <div class="card-title premium-title"><i class="fa-solid fa-book-open" style="color:var(--info);"></i> My Enrolled Courses <span class="course-count-badge"><i class="fa-solid fa-layer-group"></i> {{ enrolled_courses|length }} Courses</span></div>
+      <div class="course-list premium-list">
+        {% for course in enrolled_courses %}
+        <div class="student-course-item" data-course-id="{{ course.id }}">
+          <div class="course-thumb-wrapper">
+            {% if course.vedio %}
+            <video class="student-course-thumb" preload="metadata" muted playsinline src="{{ course.vedio.url }}#t=1" onerror="this.style.visibility='hidden';"></video>
+            {% else %}
+            <div class="student-course-thumb" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-video" style="color:rgba(255,255,255,.85);font-size:1rem;"></i></div>
+            {% endif %}
+            <span class="thumb-play"><i class="fa-solid fa-play"></i></span>
+          </div>
+          <div class="student-course-info">
+            <h4 class="student-course-title">{{ course.title }}</h4>
+            <div class="student-course-meta">
+              <span><i class="fa-regular fa-user"></i> {{ course.student.get_full_name|default:course.student.email }}</span>
+              <span><i class="fa-regular fa-clock"></i> {{ course.video_count }} lessons</span>
+              <span><i class="fa-solid fa-chart-simple"></i> {{ course.level_display }}</span>
+              <span class="enrolled-badge"><i class="fa-solid fa-check-circle"></i> Enrolled</span>
+            </div>
+          </div>
+          <button type="button" class="action-btn student-playlist-btn playlist-btn"
+                  data-playlist-btn
+                  data-course-id="{{ course.id }}"
+                  data-course-title="{{ course.title|escape }}"
+                  data-playlist-url="{% url 'get_playlist_videos' course.id %}"
+                  data-add-video-url="">
+            <i class="fa-solid fa-list-ul"></i> Playlist
+          </button>
+        </div>
+        {% empty %}
+        <div class="premium-empty">
+          <i class="fa-solid fa-book-open"></i>
+          <p>You haven't enrolled in any courses yet.</p>
+          <a href="{% url 'index' %}" class="btn btn-primary" style="margin-top:1rem;"><i class="fa-solid fa-compass"></i> Browse Courses</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    </div>
+
+  </div>
+
+  {% if is_teacher %}
+  <div class="modal" id="courseModal" data-autopen="{% if course_form_open %}1{% endif %}">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-circle-plus"></i> <span id="courseModalTitle">{% if course_form.instance %}Edit Course{% else %}Add New Course{% endif %}</span></h2>
+        <button type="button" class="close-modal" id="closeModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form method="POST" enctype="multipart/form-data" action="{% url 'prof_course' %}" id="courseForm">
+        {% csrf_token %}
+        <input type="hidden" name="course_id" id="courseIdInput" value="{% if course_form.instance %}{{ course_form.instance.id }}{% endif %}">
+        {% if course_form.non_field_errors %}
+        <div class="modal-error">
+          <i class="fa-solid fa-circle-exclamation"></i> Please fix the following:
+          <ul>{% for error in course_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="{{ course_form.title.id_for_label }}">Course Title</label>
+            {{ course_form.title }}
+            {% for error in course_form.title.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ course_form.category.id_for_label }}">Category</label>
+            {{ course_form.category }}
+            {% for error in course_form.category.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ course_form.level.id_for_label }}">Level</label>
+            {{ course_form.level }}
+            {% for error in course_form.level.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ course_form.Course_price.id_for_label }}">Price ($)</label>
+            {{ course_form.Course_price }}
+            {% for error in course_form.Course_price.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ course_form.vedio.id_for_label }}">Video</label>
+            {{ course_form.vedio }}
+            <span class="form-hint">{% if course_form.instance %}Leave empty to keep the current video{% else %}MP4 or WebM{% endif %}</span>
+            {% for error in course_form.vedio.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <label for="{{ course_form.description.id_for_label }}">Description</label>
+            {{ course_form.description }}
+            {% for error in course_form.description.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <button type="submit" class="btn btn-primary" id="courseSubmitBtn" style="width:100%; justify-content:center;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> {% if course_form.instance %}Save Changes{% else %}Create Draft{% endif %}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if info.role == 'student' and teacher_application.status != 'pending' %}
+  <div class="modal" id="teacherModal" data-autopen="{% if teacher_form_open %}1{% endif %}">
+    <div class="modal-box">
+      <div class="modal-header"><h2><i class="fa-solid fa-chalkboard-user"></i> Apply as Teacher</h2><button type="button" class="close-modal" id="closeTeacherModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+      <form method="POST" action="{% url 'apply_teacher' %}" enctype="multipart/form-data" id="teacherForm">
+        {% csrf_token %}
+        {% if teacher_form.non_field_errors %}
+        <div class="modal-error">
+          <i class="fa-solid fa-circle-exclamation"></i> Please fix the following:
+          <ul>{% for error in teacher_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="{{ teacher_form.experience.id_for_label }}">Years of Experience</label>
+            {{ teacher_form.experience }}
+            {% for error in teacher_form.experience.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ teacher_form.expertise.id_for_label }}">Expertise Area</label>
+            {{ teacher_form.expertise }}
+            {% for error in teacher_form.expertise.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <label for="{{ teacher_form.portfolio.id_for_label }}">Portfolio / LinkedIn URL</label>
+            {{ teacher_form.portfolio }}
+            {% for error in teacher_form.portfolio.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <label for="{{ teacher_form.c_v.id_for_label }}">CV</label>
+            {{ teacher_form.c_v }}
+            {% for error in teacher_form.c_v.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <label for="{{ teacher_form.reason.id_for_label }}">Why do you want to teach?</label>
+            {{ teacher_form.reason }}
+            {% for error in teacher_form.reason.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full"><button type="submit" class="btn btn-warning" style="width:100%; justify-content:center;"><i class="fa-solid fa-paper-plane"></i> Submit Application</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="playlist-overlay" id="playlistOverlay"></div>
+  <div class="playlist-sidebar" id="playlistSidebar">
+    <div class="playlist-header">
+      <h3><i class="fa-solid fa-list-ul" style="color:var(--secondary);"></i> <span id="playlistCourseTitle">Course Playlist</span></h3>
+      <button class="close-playlist" id="closePlaylist" aria-label="Close playlist"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="video-player-container hidden" id="videoPlayerContainer">
+      <video id="videoPlayer" controls preload="metadata">
+        <source src="" type="video/mp4">
+      </video>
+      <div class="video-title" id="videoPlayerTitle">Now Playing</div>
+      <button class="close-video" id="closeVideoPlayer" aria-label="Close player"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="playlistContent"></div>
+    <div class="playlist-footer">
+      <span id="playlistTotal"><i class="fa-regular fa-circle-play"></i> Total: 0 videos, 0 quizzes</span>
+      {% if is_teacher %}
+      <button type="button" class="add-video-btn" id="showAddVideoBtn"
+         title="Add a video to this course playlist"><i class="fa-solid fa-plus"></i> Add Video</button>
+      {% else %}
+      <button type="button" class="add-video-btn is-disabled" id="showAddVideoBtn" disabled
+         aria-disabled="true" style="display:none;opacity:.5;cursor:not-allowed;"><i class="fa-solid fa-plus"></i> Add Video</button>
+      {% endif %}
+    </div>
+    <div class="owner-note" id="playlistOwnerNote" style="display:none;">
+      <i class="fa-solid fa-lock"></i> Only the course owner can add videos.
+    </div>
+    <div id="addVideoForm" style="display:none; margin-top:0.5rem; padding:0.8rem; background:#f8faf7; border-radius:16px;">
+      <div class="file-input-wrapper">
+      <input type="file" id="videoFileInput" accept="video/*,.mp4,.webm,.ogv,.ogg,.mov,.mkv,.avi,.wmv,.flv,.m4v,.mpg,.mpeg,.3gp">
+        <span class="file-name" id="fileNameDisplay">No file selected</span>
+      </div>
+      <div class="file-upload-actions">
+        <button class="upload-cancel" id="cancelFileUpload"><i class="fa-solid fa-xmark"></i> Cancel</button>
+        <button class="upload-confirm" id="confirmFileUpload"><i class="fa-solid fa-check"></i> Upload Video</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMessage">Action completed!</span></div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const $ = function (id) { return document.getElementById(id); };
+
+    function esc(value) {
+      return String(value === null || value === undefined ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getCsrfToken() {
+      const name = 'csrftoken';
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const trimmed = cookies[i].trim();
+        if (trimmed.indexOf(name + '=') === 0) {
+          return decodeURIComponent(trimmed.substring(name.length + 1));
+        }
+      }
+      return null;
+    }
+
+    let toastTimer = null;
+    const toast = $('toast');
+    const toastMessage = $('toastMessage');
+    const toastIcon = toast ? toast.querySelector('i') : null;
+
+    function showToast(message, type) {
+      if (!toast || !toastMessage) return;
+      toastMessage.textContent = message;
+      if (type === 'error') {
+        if (toastIcon) toastIcon.className = 'fa-solid fa-circle-exclamation';
+        toast.style.background = '#dc2626';
+      } else {
+        if (toastIcon) toastIcon.className = 'fa-solid fa-circle-check';
+        toast.style.background = '#18311f';
+      }
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 4000);
+    }
+    window.showToast = showToast;
+
+    const courseModal = $('courseModal');
+    const teacherModal = $('teacherModal');
+    const courseForm = $('courseForm');
+    const courseIdInput = $('courseIdInput');
+    const courseModalTitle = $('courseModalTitle');
+    const courseSubmitBtn = $('courseSubmitBtn');
+    const videoFileInput = $('videoFileInput');
+
+    function setModalState(modal, open) {
+      if (!modal) return;
+      modal.classList.toggle('active', open);
+      if (open) {
+        document.body.style.overflow = 'hidden';
+      } else if (!($('playlistSidebar') && $('playlistSidebar').classList.contains('open'))) {
+        document.body.style.overflow = '';
+      }
+    }
+
+    function closeCourseModal() {
+      setModalState(courseModal, false);
+      if (courseForm) courseForm.reset();
+      if (courseIdInput) courseIdInput.value = '';
+      if (courseModalTitle) courseModalTitle.textContent = 'Add New Course';
+      if (courseSubmitBtn) {
+        courseSubmitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Create Draft';
+      }
+      if (courseForm) {
+        courseForm.querySelectorAll('.field-error, .modal-error').forEach(function (el) { el.remove(); });
+      }
+    }
+
+    function openCourseModal(course) {
+      if (!courseModal) return;
+      if (course) {
+        if (courseIdInput) courseIdInput.value = course.id || '';
+        if (courseModalTitle) courseModalTitle.textContent = 'Edit Course';
+        if (courseSubmitBtn) {
+          courseSubmitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+        }
+        if (courseForm) {
+          const setValue = function (name, value) {
+            const field = courseForm.querySelector('[name="' + name + '"]');
+            if (field) field.value = value === null || value === undefined ? '' : value;
+          };
+          setValue('title', course.title);
+          setValue('category', course.category);
+          setValue('level', course.level);
+          setValue('Course_price', course.price);
+          setValue('description', course.description);
+          const video = courseForm.querySelector('[name="vedio"]');
+          if (video) video.value = '';
+        }
+      } else {
+        if (courseIdInput) courseIdInput.value = '';
+        if (courseForm) courseForm.reset();
+        if (courseModalTitle) courseModalTitle.textContent = 'Add New Course';
+        if (courseSubmitBtn) {
+          courseSubmitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Create Draft';
+        }
+      }
+      setModalState(courseModal, true);
+    }
+
+    const openCourseBtn = $('openModal');
+    if (openCourseBtn) {
+      openCourseBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        openCourseModal(null);
+      });
+    }
+    const emptyCreateBtn = $('emptyCreateCourse');
+    if (emptyCreateBtn) {
+      emptyCreateBtn.addEventListener('click', function () { openCourseModal(null); });
+    }
+    $('closeModal') && $('closeModal').addEventListener('click', closeCourseModal);
+    $('closeTeacherModal') && $('closeTeacherModal').addEventListener('click', function () {
+      setModalState(teacherModal, false);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target === courseModal) closeCourseModal();
+      if (e.target === teacherModal) setModalState(teacherModal, false);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      const sidebar = $('playlistSidebar');
+      if (sidebar && sidebar.classList.contains('open')) {
+        closePlaylist();
+        return;
+      }
+      if (courseModal && courseModal.classList.contains('active')) closeCourseModal();
+      if (teacherModal && teacherModal.classList.contains('active')) setModalState(teacherModal, false);
+    });
+
+    if (courseModal && courseModal.dataset.autopen === '1') {
+      openCourseModal(courseIdInput && courseIdInput.value
+        ? { id: courseIdInput.value, title: '', category: '', level: '', price: '', description: '' }
+        : null);
+    }
+    if (teacherModal && teacherModal.dataset.autopen === '1') {
+      setModalState(teacherModal, true);
+    }
+
+    document.querySelectorAll('[data-edit-btn]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openCourseModal({
+          id: this.dataset.courseId,
+          title: this.dataset.title,
+          category: this.dataset.category,
+          level: this.dataset.level,
+          price: this.dataset.price,
+          description: this.dataset.description
+        });
+      });
+    });
+
+    document.querySelectorAll('a[data-confirm]').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        if (!window.confirm(this.dataset.confirm)) e.preventDefault();
+      });
+    });
+
+    document.querySelectorAll('[data-publish-btn]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const self = this;
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+          showToast('CSRF token not found. Please refresh the page.', 'error');
+          return;
+        }
+
+        const isPublished = self.dataset.isPublished === '1';
+        const body = new FormData();
+        body.append('action', isPublished ? 'unpublish' : 'publish');
+
+        self.disabled = true;
+        const original = self.innerHTML;
+        self.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Working...';
+
+        fetch(self.dataset.publishUrl, {
+          method: 'POST',
+          body: body,
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin'
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) {
+                throw new Error(data.error || data.message || ('Server error: ' + response.status));
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            const published = data.is_published === true;
+            self.dataset.isPublished = published ? '1' : '0';
+            self.classList.toggle('published', published);
+            self.innerHTML = published
+              ? '<i class="fas fa-circle-check"></i> Published'
+              : '<i class="fa-solid fa-rocket"></i> Publish';
+            self.title = published
+              ? 'Visible to students \u2014 click to move back to draft'
+              : 'Click to publish this course';
+
+            const item = self.closest('.premium-item');
+            const chip = item ? item.querySelector('.draft-chip') : null;
+            if (!published && item && !chip) {
+              const thumb = item.querySelector('.course-thumb-wrapper');
+              if (thumb) {
+                const badge = document.createElement('span');
+                badge.className = 'draft-chip';
+                badge.textContent = 'Draft';
+                thumb.appendChild(badge);
+              }
+            } else if (published && chip) {
+              chip.remove();
+            }
+
+            showToast(data.message || (published ? 'Course published.' : 'Course moved to draft.'), 'success');
+          })
+          .catch(function (error) {
+            self.innerHTML = original;
+            showToast(error.message || 'Could not update the course.', 'error');
+          })
+          .finally(function () { self.disabled = false; });
+      });
+    });
+
+    const overlay = $('playlistOverlay');
+    const sidebar = $('playlistSidebar');
+    const playlistTitle = $('playlistCourseTitle');
+    const playlistContent = $('playlistContent');
+    const playlistTotal = $('playlistTotal');
+    const showAddBtn = $('showAddVideoBtn');
+    const ownerNote = $('playlistOwnerNote');
+    const addForm = $('addVideoForm');
+    const fileNameDisplay = $('fileNameDisplay');
+    const confirmUploadBtn = $('confirmFileUpload');
+    const cancelUploadBtn = $('cancelFileUpload');
+
+    const videoContainer = $('videoPlayerContainer');
+    const videoPlayer = $('videoPlayer');
+
+    let currentCourseId = null;
+    let currentPlaylistUrl = '';
+    let currentUploadUrl = '';
+    let selectedFile = null;
+    let requestToken = 0;
+
+    function playVideo(title, src) {
+      if (!src) {
+        showToast('This video file is missing.', 'error');
+        return;
+      }
+      if (!videoPlayer) return;
+      $('videoPlayerTitle').textContent = title || 'Now Playing';
+      const source = videoPlayer.querySelector('source');
+      source.src = src;
+      videoPlayer.load();
+      const attempt = videoPlayer.play();
+      if (attempt && typeof attempt.catch === 'function') {
+        attempt.catch(function () {});
+      }
+      videoContainer.classList.remove('hidden');
+    }
+
+    function closeVideoPlayer() {
+      if (videoPlayer) {
+        videoPlayer.pause();
+        const source = videoPlayer.querySelector('source');
+        if (source) source.removeAttribute('src');
+        videoPlayer.load();
+      }
+      if (videoContainer) videoContainer.classList.add('hidden');
+    }
+    $('closeVideoPlayer') && $('closeVideoPlayer').addEventListener('click', closeVideoPlayer);
+
+    function renderPlaylist(data, token) {
+      const videos = Array.isArray(data.videos) ? data.videos : [];
+      const quizzes = Array.isArray(data.quizzes) ? data.quizzes : [];
+
+      if (token !== requestToken) return;
+
+      if (videos.length === 0 && quizzes.length === 0) {
+        playlistContent.innerHTML =
+          '<div class="playlist-empty">' +
+            '<i class="fa-solid fa-film"></i>' +
+            '<p>No videos or quizzes in this course yet.</p>' +
+          '</div>';
+        playlistTotal.textContent = 'Total: 0 videos, 0 quizzes';
+        return;
+      }
+
+      let html = '';
+
+      if (videos.length > 0) {
+        html += '<div class="playlist-section-title">&#127916; Videos (' + videos.length + ')</div>';
+        videos.forEach(function (video, index) {
+          const url = video.video_url || '';
+          const title = video.title || ('Video ' + (index + 1));
+          html +=
+            '<div class="playlist-item">' +
+              '<div class="thumb"><i class="fa-solid fa-play"></i></div>' +
+              '<div class="info">' +
+                '<h4>' + (index + 1) + '. ' + esc(title) + '</h4>' +
+              '</div>' +
+              '<button class="play-btn" type="button" data-play-video data-src="' + esc(url) + '" data-title="' + esc(title) + '" title="Play video">' +
+                '<i class="fa-solid fa-play"></i>' +
+              '</button>' +
+            '</div>';
+        });
+      }
+
+      if (quizzes.length > 0) {
+        html += '<div class="playlist-section-title">&#9997; Quizzes (' + quizzes.length + ')</div>';
+        quizzes.forEach(function (quiz, index) {
+          const title = quiz.title || ('Quiz ' + (index + 1));
+          const isDraft = quiz.is_published === false;
+
+          const url = quiz.quiz_url || '';
+          let action;
+          if (!url || quiz.quiz_mode === 'locked') {
+            action =
+              '<button class="play-btn quiz-play" type="button" disabled ' +
+                'title="Not published yet" style="opacity:.45;cursor:not-allowed;">' +
+                '<i class="fa-solid fa-lock"></i>' +
+              '</button>';
+          } else {
+            const isSubmissions = quiz.quiz_mode === 'submissions';
+            const label = isSubmissions ? 'View submissions' : 'Take quiz';
+            const icon = isSubmissions ? 'fa-users' : 'fa-play';
+            action =
+              '<a class="play-btn quiz-play" href="' + esc(url) + '" title="' + label + '">' +
+                '<i class="fa-solid ' + icon + '"></i>' +
+              '</a>';
+          }
+
+          const draftBadge = isDraft
+            ? '<span class="enrolled-badge" style="background:rgba(234,179,8,.15);color:#ca8a04;">DRAFT</span>'
+            : '';
+
+          const meta = [];
+          if (quiz.difficulty) meta.push(esc(quiz.difficulty));
+          if (quiz.total_questions) meta.push(quiz.total_questions + ' questions');
+          if (quiz.duration) meta.push(quiz.duration + ' min');
+          if (quiz.total_points) meta.push(quiz.total_points + ' pts');
+
+          html +=
+            '<div class="playlist-item quiz-item">' +
+              '<div class="thumb"><i class="fa-solid fa-circle-question"></i></div>' +
+              '<div class="info">' +
+                '<h4>' + (index + 1) + '. ' + esc(title) + ' ' + draftBadge + '</h4>' +
+                (meta.length ? '<div class="quiz-meta">' + meta.join(' &middot; ') + '</div>' : '') +
+              '</div>' +
+              action +
+            '</div>';
+        });
+      }
+
+      playlistContent.innerHTML = html;
+      playlistTotal.textContent = 'Total: ' + videos.length + ' videos, ' + quizzes.length + ' quizzes';
+
+      playlistContent.querySelectorAll('[data-play-video]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          playVideo(this.dataset.title, this.dataset.src);
+        });
+      });
+    }
+
+    function fetchPlaylist(url) {
+      if (!url) {
+        showToast('Playlist URL is missing.', 'error');
+        return;
+      }
+      requestToken += 1;
+      const token = requestToken;
+
+      playlistContent.innerHTML =
+        '<div class="playlist-empty">' +
+          '<i class="fa-solid fa-spinner fa-spin"></i>' +
+          '<p>Loading playlist...</p>' +
+        '</div>';
+      playlistTotal.textContent = 'Loading...';
+
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok) {
+              throw new Error(data.error || ('Server error: ' + response.status));
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          if (token !== requestToken) return;
+          const canUpload = (typeof data.can_upload === 'boolean') ? data.can_upload : !!currentUploadUrl;
+          applyUploadAvailability(canUpload, data.owner_name);
+          if (playlistTitle && data.course_title) {
+            playlistTitle.textContent = data.course_title + ' \u2014 Playlist';
+          }
+          renderPlaylist(data, token);
+        })
+        .catch(function (error) {
+          if (token !== requestToken) return;
+          playlistTotal.textContent = 'Total: 0 videos, 0 quizzes';
+          playlistContent.innerHTML =
+            '<div class="playlist-empty">' +
+              '<i class="fa-solid fa-circle-exclamation"></i>' +
+              '<p>' + esc(error.message) + '</p>' +
+              '<button type="button" class="add-video-btn" id="retryPlaylist" style="margin-top:0.8rem;">' +
+                '<i class="fa-solid fa-rotate"></i> Retry' +
+              '</button>' +
+            '</div>';
+          const retry = $('retryPlaylist');
+          if (retry) {
+            retry.addEventListener('click', function () { fetchPlaylist(currentPlaylistUrl); });
+          }
+          showToast(error.message, 'error');
+        });
+    }
+
+    function closePlaylist() {
+      requestToken += 1;
+      closeVideoPlayer();
+      if (overlay) overlay.classList.remove('active');
+      if (sidebar) sidebar.classList.remove('open');
+      if (!courseModal || !courseModal.classList.contains('active')) {
+        document.body.style.overflow = '';
+      }
+      resetUploadForm();
+      currentCourseId = null;
+      currentPlaylistUrl = '';
+      currentUploadUrl = '';
+    }
+
+    $('closePlaylist') && $('closePlaylist').addEventListener('click', closePlaylist);
+    overlay && overlay.addEventListener('click', closePlaylist);
+
+    document.querySelectorAll('[data-playlist-btn]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        currentCourseId = this.dataset.courseId || null;
+        currentPlaylistUrl = this.dataset.playlistUrl || '';
+        currentUploadUrl = this.dataset.addVideoUrl || '';
+        if (playlistTitle) {
+          playlistTitle.textContent = (this.dataset.courseTitle || 'Course') + ' — Playlist';
+        }
+        closeVideoPlayer();
+        resetUploadForm();
+        applyUploadAvailability(!!currentUploadUrl);
+        if (overlay) overlay.classList.add('active');
+        if (sidebar) sidebar.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        fetchPlaylist(currentPlaylistUrl);
+      });
+    });
+
+    const MAX_UPLOAD_BYTES = {{ playlist_max_upload_bytes|default:1073741824 }};
+
+    const VIDEO_EXTENSIONS = [
+      'mp4', 'webm', 'ogv', 'ogg', 'mov', 'mkv', 'avi', 'wmv', 'flv', 'm4v', 'mpg', 'mpeg', '3gp'
+    ];
+
+    function videoExtension(name) {
+      const parts = String(name || '').split('.');
+      return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    }
+
+    function looksLikeVideo(file) {
+      if (VIDEO_EXTENSIONS.indexOf(videoExtension(file.name)) !== -1) return true;
+      return /^video\//.test(file.type || '');
+    }
+
+    function humanSize(bytes) {
+      if (!bytes) return '0 B';
+      const mb = bytes / (1024 * 1024);
+      if (mb >= 1024) return (mb / 1024).toFixed(2) + ' GB';
+      if (mb >= 1) return mb.toFixed(1) + ' MB';
+      return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    }
+
+    function setUploadReady(ready) {
+      if (confirmUploadBtn) confirmUploadBtn.disabled = !ready;
+    }
+
+    function applyUploadAvailability(canUpload, ownerName) {
+      if (showAddBtn) {
+        if (canUpload) {
+          showAddBtn.style.display = 'inline-flex';
+          showAddBtn.classList.remove('is-disabled');
+          showAddBtn.style.pointerEvents = '';
+          showAddBtn.style.opacity = '';
+        } else {
+          showAddBtn.style.display = 'none';
+        }
+      }
+      if (ownerNote) {
+        ownerNote.style.display = canUpload ? 'none' : 'block';
+        if (!canUpload && ownerName) {
+          ownerNote.innerHTML = '<i class="fa-solid fa-lock"></i> Only ' +
+            esc(ownerName) + ' can add videos to this course.';
+        }
+      }
+    }
+
+    function resetUploadForm() {
+      if (addForm) addForm.style.display = 'none';
+      if (videoFileInput) videoFileInput.value = '';
+      if (fileNameDisplay) fileNameDisplay.textContent = 'No file selected';
+      selectedFile = null;
+      setUploadReady(false);
+    }
+
+    if (confirmUploadBtn) setUploadReady(false);
+
+    if (videoFileInput) {
+      videoFileInput.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) {
+          selectedFile = null;
+          setUploadReady(false);
+          if (fileNameDisplay) fileNameDisplay.textContent = 'No file selected';
+          return;
+        }
+        if (!looksLikeVideo(file)) {
+          showToast('That is not a video file. Allowed: ' + VIDEO_EXTENSIONS.join(', '), 'error');
+          resetUploadForm();
+          return;
+        }
+        if (file.size === 0) {
+          showToast('That file is empty (0 bytes).', 'error');
+          resetUploadForm();
+          return;
+        }
+        if (file.size > MAX_UPLOAD_BYTES) {
+          showToast('That file is ' + humanSize(file.size) + '. The limit is ' +
+                    humanSize(MAX_UPLOAD_BYTES) + '.', 'error');
+          resetUploadForm();
+          return;
+        }
+        selectedFile = file;
+        setUploadReady(true);
+        if (fileNameDisplay) fileNameDisplay.textContent = file.name + '  (' + humanSize(file.size) + ')';
+      });
+    }
+
+    if (showAddBtn) {
+      showAddBtn.addEventListener('click', function () {
+        if (!addForm) return;
+
+        if (!currentUploadUrl) {
+          showToast('You can only add videos to your own courses.', 'error');
+          return;
+        }
+
+        const isHidden = addForm.style.display === 'none' || addForm.style.display === '';
+        addForm.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+          // Clear any previously selected file WITHOUT hiding the form again
+          // (resetUploadForm() also sets display:none).
+          if (videoFileInput) videoFileInput.value = '';
+          if (fileNameDisplay) fileNameDisplay.textContent = 'No file selected';
+          selectedFile = null;
+          setUploadReady(false);
+          if (videoFileInput) videoFileInput.focus();
+        }
+      });
+    }
+
+    cancelUploadBtn && cancelUploadBtn.addEventListener('click', resetUploadForm);
+
+    if (confirmUploadBtn) {
+      confirmUploadBtn.addEventListener('click', function () {
+        if (!selectedFile) {
+          showToast('Please select a video file first.', 'error');
+          return;
+        }
+        if (!currentUploadUrl) {
+          showToast('You can only upload videos to your own courses.', 'error');
+          return;
+        }
+
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+          showToast('CSRF token not found. Please refresh the page.', 'error');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('video', selectedFile);
+
+        const button = this;
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+
+        fetch(currentUploadUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin'
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) {
+                throw new Error(data.error || data.message || ('Server error: ' + response.status));
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            if (data.success) {
+              showToast(data.message || 'Video added successfully.', 'success');
+              resetUploadForm();
+              fetchPlaylist(currentPlaylistUrl);
+            } else {
+              showToast(data.error || 'Upload failed.', 'error');
+            }
+          })
+          .catch(function (error) {
+            showToast(error.message || 'Upload failed. Please try again.', 'error');
+          })
+          .finally(function () {
+            button.disabled = false;
+            button.innerHTML = original;
+          });
+      });
+    }
+
+    {% if messages %}
+      window.__djangoMessages = [
+        {% for message in messages %}
+          { text: "{{ message|escapejs }}", level: "{% if message.tags == 'error' %}error{% else %}success{% endif %}" }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ];
+    {% else %}
+      window.__djangoMessages = [];
+    {% endif %}
+
+    (window.__djangoMessages || []).forEach(function (message) {
+      showToast(message.text, message.level);
+    });
+  })();
+  </script>
+
+</div>
+</body>
+</html>

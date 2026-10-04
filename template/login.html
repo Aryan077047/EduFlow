@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f4f7f1;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.auth-layout-wrap {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 15px;
+    animation: fadeInUp 0.8s ease forwards;
+}
+.card {
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    max-width: 980px;
+    width: 100%;
+    background: #fafdf7;
+}
+.auth-left {
+    background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)),
+                url("{% static 'dist-assets/images/photo-long-3.jpg' %}") center/cover no-repeat;
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    position: relative;
+}
+.auth-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(77, 139, 49, 0.20), transparent);
+}
+.auth-right {
+    padding: 2.8rem 2.2rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.auth-logo img {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #ffffff;
+    border: 6px solid #ffffff;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    margin-bottom: 20px;
+    transition: transform 0.4s ease;
+}
+.auth-logo:hover img {
+    transform: scale(1.05);
+}
+.welcome-text {
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: 30px;
+}
+.welcome-text h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.welcome-text p {
+    font-size: 0.96rem;
+    opacity: 0.92;
+    line-height: 1.5;
+}
+/* Social Buttons */
+.social-buttons a {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+.email { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
+.google { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
+.facebook { background: #1877f2; color: #fff; }
+.social-buttons a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+/* فرم لاگین */
+.form-side {
+    background: #fff;
+    padding: 2.8rem 2.5rem;
+}
+.form-side h1 {
+    font-size: 1.78rem;
+    font-weight: 700;
+    color: #18311f;
+    margin-bottom: 8px;
+}
+.form-subtitle {
+    color: #7a887f;
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+}
+.form-group {
+    margin-bottom: 22px;
+}
+.form-group .icon-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #374151;
+}
+.form-group .icon-label i {
+    font-size: 1.15rem;
+    color: #5d9c59;
+    width: 20px;
+}
+.form-group input {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    font-size: 0.96rem;
+    transition: all 0.3s ease;
+}
+.form-group input:focus {
+    border-color: #7fbf5b;
+    box-shadow: 0 0 0 4px rgba(127, 191, 91, 0.15);
+    outline: none;
+}
+.remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+.remember-forgot label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #4b5563;
+}
+.forgot-link {
+    color: #5d9c59;
+    text-decoration: none;
+    font-weight: 500;
+}
+.forgot-link:hover {
+    text-decoration: underline;
+}
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4d8b31, #2f5233);
+    color: white;
+    font-weight: 600;
+    font-size: 1.02rem;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5d9c59, #3d7a47);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(77, 139, 49, 0.35);
+}
+.auth-switch {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 0.94rem;
+    color: #6b7280;
+}
+.auth-switch a {
+    color: #5d9c59;
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-switch a:hover {
+    color: #4d8b31;
+    text-decoration: underline;
+}
+.error {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 6px;
+    font-weight: 500;
+}
+@media (max-width: 768px) {
+    .auth-left { min-height: 420px; }
+    .auth-logo img { width: 90px; height: 90px; }
+    .form-side { padding: 2rem 1.8rem; }
+}
+</style>
+<div class="auth-layout-wrap">
+    <div class="card">
+        <div class="row g-0">
+            <!-- LEFT SIDE -->
+            <div class="col-md-6 auth-left">
+                <div class="auth-right">
+                    <div class="auth-logo">
+                        <img src="{% static 'dist-assets/images/newlogo.png' %}" alt="Logo">
+                    </div>
+                    <div class="welcome-text">
+                        <h2>Welcome back!</h2>
+                        <p>Sign in to continue your journey</p>
+                    </div>
+                </div>
+            </div>
+            <!-- RIGHT SIDE -->
+            <div class="col-md-6">
+                <div class="form-side">
+                    <h1>Sign In</h1>
+                    <div class="form-subtitle">Enter your credentials to access your account</div>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <!-- EMAIL -->
+                        <div class="form-group">
+                            <div class="icon-label">
+                                <i class="fa fa-envelope"></i>
+                                <span>Email Address</span>
+                            </div>
+                            <input type="email" name="email" placeholder="you@example.com" required>
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="error">{{ message }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <!-- PASSWORD -->
+                        <div class="form-group">
+                            <div class="icon-label">
+                                <i class="fa fa-lock"></i>
+                                <span>Password</span>
+                            </div>
+                            <input type="password" name="password" placeholder="••••••••" required>
+                        </div>
+                        <!-- REMEMBER -->
+                        <div class="remember-forgot">
+                            <label>
+                                <input type="checkbox" name="remember">
+                                Remember me
+                            </label>
+                            <a href="{% url 'forgot_password' %}" class="forgot-link">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            Sign In
+                        </button>
+                    </form>
+                    <div class="auth-switch">
+                        Don't have an account?
+                        <a href="{% url 'register_teacher' %}">Create one here</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

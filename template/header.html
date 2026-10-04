@@ -1,0 +1,673 @@
+{% load static %}
+
+<!-- ====================== PROFESSIONAL GREEN HEADER ====================== -->
+
+<header class="main-header">
+    <div class="container-fluid px-3 px-xl-4">
+        <div class="header-inner">
+
+            <!-- LEFT -->
+            <div class="left-section">
+                <a href="#" class="logo-link">
+                    <img src="{% static 'dist-assets/images/newlogo.png' %}"
+                         alt="Logo"
+                         class="main-logo">
+                </a>
+
+                <button class="mobile-menu-btn d-md-none" id="mobileMenuBtn">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+
+            <!-- SEARCH -->
+            <div class="search-wrapper d-none d-lg-block">
+                <div class="search-box">
+                    <i class="fa fa-search search-icon"></i>
+                    <input type="text"
+                           id="globalSearch"
+                           placeholder="Search courses, videos..."
+                           class="search-input">
+                </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="header-actions">
+
+                <!-- 🌙 Dark Mode Toggle -->
+                <button class="action-btn" id="themeToggle" title="Toggle dark mode">
+                    <i class="fa fa-moon" id="themeIcon"></i>
+                </button>
+
+                <!-- Fullscreen -->
+                <button onclick="toggleFullscreen()"
+                        class="action-btn"
+                        title="Fullscreen">
+                    <i class="fa fa-expand"></i>
+                </button>
+
+                <!-- Notifications -->
+                <button class="action-btn has-badge" id="notifBtn">
+                    <i class="fa fa-bell"></i>
+                    <span class="badge-dot"></span>
+                </button>
+
+                <!-- Messages -->
+                <button class="action-btn has-badge" id="msgBtn">
+                    <i class="fa fa-envelope"></i>
+                    <span class="badge-count">5</span>
+                </button>
+
+                <!-- PROFILE -->
+                {% if request.user.is_authenticated %}
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profileBtn">
+                        <img src="
+                            {% if profile_img and profile_img.picture %}
+                                {{ profile_img.picture.url }}
+                            {% else %}
+                                {% static 'dist-assets/images/newlogo.png' %}
+                            {% endif %}
+                        " alt="Profile" class="profile-img"
+                        onerror="this.src='{% static 'dist-assets/images/newlogo.png' %}'">
+
+                        <div class="profile-info d-none d-lg-block">
+                            <span class="profile-name">
+                                {{ request.user.first_name|default:request.user.email }}
+                            </span>
+                            <span class="profile-role">
+                                {% if request.user.role == 'teacher' %}
+                                    Teacher
+                                {% else %}
+                                    Student
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <i class="fa fa-chevron-down profile-arrow"></i>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div class="profile-menu" id="profileMenu">
+                        <a href="{% url 'user_profile' %}" class="profile-menu-item">
+                            <i class="fa fa-user"></i> My Profile
+                        </a>
+                        <a href="{% url 'user_profile' %}#courseList" class="profile-menu-item">
+                            <i class="fa fa-book"></i> My Courses
+                        </a>
+                        <a href="{% url 'setting' %}" class="profile-menu-item">
+                            <i class="fa fa-gear"></i> Settings
+                        </a>
+                        <div class="profile-divider"></div>
+                        <a href="{% url 'user_logout' %}" class="profile-menu-item logout-item">
+                            <i class="fa fa-right-from-bracket"></i> Logout
+                        </a>
+                    </div>
+                </div>
+
+                {% else %}
+                <!-- LOGIN -->
+                <a href="{% url 'user_login' %}" class="login-btn">
+                    <i class="fa fa-user-lock"></i>
+                    <span>Login</span>
+                </a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ====================== STYLES ====================== -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root{
+    --primary-dark:#18311f;
+    --deep-green:#2f5233;
+    --light-green:#5d9c59;
+    --accent-green:#7fbf5b;
+    --bg-light:#f3f8f1;
+}
+
+/* ====================== BODY ====================== */
+body{
+    font-family:'Plus Jakarta Sans',sans-serif;
+    background:
+        radial-gradient(circle at top right, rgba(16, 43, 1, 0.1), transparent 25%),
+        radial-gradient(circle at bottom left, rgba(4, 64, 11, 0.08), transparent 30%),
+        var(--bg-light);
+    min-height:100vh;
+}
+
+/* ====================== HEADER ====================== */
+.main-header{
+    position:sticky;
+    top:0;
+    z-index:1030;
+    background:#2f5233;
+    border-bottom:1px solid rgba(205,225,201,.5);
+    box-shadow:0 6px 24px rgba(78, 209, 115, 0.05);
+    transition:background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-header.scrolled{
+    background:rgba(255,255,255,.94);
+    box-shadow:0 10px 30px rgba(28,56,36,.08);
+}
+
+/* ====================== INNER ====================== */
+.header-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:14px 0;
+}
+
+/* ====================== LEFT ====================== */
+.left-section{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+/* ====================== LOGO ====================== */
+.logo-link{
+    display:flex;
+    align-items:center;
+    text-decoration:none;
+}
+
+.main-logo{
+    height:56px;
+    width:auto;
+    border-radius:12px;
+}
+
+/* ====================== MOBILE MENU ====================== */
+.mobile-menu-btn{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:12px;
+    background:#edf7e8;
+    color:var(--deep-green);
+    font-size:1rem;
+    transition:background 0.25s ease;
+    cursor:pointer;
+}
+
+.mobile-menu-btn:hover{
+    background:#dff2d7;
+}
+
+/* ====================== SEARCH ====================== */
+.search-wrapper{
+    flex:1;
+    max-width:480px;
+}
+
+.search-box{
+    position:relative;
+}
+
+.search-input{
+    width:100%;
+    height:48px;
+    border:none;
+    border-radius:14px;
+    padding:0 18px 0 48px;
+    background:rgba(255,255,255,.78);
+    border:1px solid rgba(185,214,180,.7);
+    color:var(--primary-dark);
+    font-size:.90rem;
+    transition:border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.search-input:focus{
+    outline:none;
+    background:#fff;
+    border-color:var(--accent-green);
+    box-shadow:0 0 0 4px rgba(127,191,91,.12);
+}
+
+.search-icon{
+    position:absolute;
+    left:18px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#6f8b73;
+    font-size:.95rem;
+}
+
+/* ====================== ACTIONS ====================== */
+.header-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+/* ====================== ACTION BUTTONS ====================== */
+.action-btn{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:12px;
+    background:#ffffff;
+    border:1px solid rgba(213,232,206,.8);
+    color:#46624d;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.95rem;
+    position:relative;
+    transition:background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    cursor:pointer;
+}
+
+.action-btn:hover{
+    background:#edf7e8;
+    color:var(--primary-dark);
+    box-shadow:0 8px 16px rgba(34,197,94,.10);
+}
+
+/* ====================== BADGES ====================== */
+.badge-dot{
+    position:absolute;
+    top:7px;
+    right:7px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ef4444;
+    border:2px solid white;
+}
+
+.badge-count{
+    position:absolute;
+    top:-3px;
+    right:-3px;
+    min-width:17px;
+    height:17px;
+    border-radius:30px;
+    background:#ef4444;
+    color:white;
+    font-size:.55rem;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:2px solid white;
+}
+
+/* ====================== LOGIN BUTTON ====================== */
+.login-btn{
+    height:42px;
+    padding:0 18px;
+    border-radius:14px;
+    background:linear-gradient(135deg, #5d9c59, #2f5233);
+    color:white;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:.84rem;
+    font-weight:700;
+    transition:box-shadow 0.25s ease;
+    box-shadow:0 6px 18px rgba(47,82,51,.15);
+}
+
+.login-btn i{
+    font-size:.95rem;
+}
+
+.login-btn:hover{
+    color:white;
+    box-shadow:0 10px 20px rgba(47,82,51,.20);
+}
+
+/* ====================== PROFILE ====================== */
+.profile-dropdown{
+    position:relative;
+}
+
+.profile-btn{
+    height:46px;
+    border:none;
+    background:rgba(255,255,255,.82);
+    border:1px solid rgba(213,232,206,.8);
+    border-radius:16px;
+    padding:0 14px 0 10px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    transition:background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.profile-btn:hover{
+    background:#edf7e8;
+    box-shadow:0 8px 18px rgba(34,197,94,.10);
+}
+
+.profile-img{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    object-fit:cover;
+    border:2px solid #d8ecd2;
+}
+
+.profile-info{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    line-height:1.2;
+}
+
+.profile-name{
+    font-size:.82rem;
+    font-weight:700;
+    color:var(--primary-dark);
+}
+
+.profile-role{
+    font-size:.70rem;
+    color:#7d8f82;
+}
+
+.profile-arrow{
+    font-size:.72rem;
+    color:#6f8174;
+}
+
+/* ====================== DROPDOWN ====================== */
+.profile-menu{
+    position:absolute;
+    top:58px;
+    right:0;
+    width:230px;
+    background:white;
+    border-radius:18px;
+    border:1px solid rgba(213,232,206,.8);
+    box-shadow:0 20px 35px rgba(29,53,36,.10);
+    padding:10px;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(10px);
+    transition:opacity 0.25s ease, visibility 0.25s ease, transform 0.25s ease;
+}
+
+.profile-menu.active{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+}
+
+.profile-menu-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    height:46px;
+    padding:0 14px;
+    border-radius:12px;
+    text-decoration:none;
+    color:#36513d;
+    font-size:.84rem;
+    font-weight:600;
+    transition:background 0.2s ease, color 0.2s ease;
+}
+
+.profile-menu-item:hover{
+    background:#edf7e8;
+    color:var(--primary-dark);
+}
+
+.profile-divider{
+    height:1px;
+    background:#e7f0e4;
+    margin:8px 0;
+}
+
+.logout-item{
+    color:#d62839;
+}
+
+/* ====================== RESPONSIVE ====================== */
+@media(max-width:992px){
+    .search-wrapper{
+        display:none;
+    }
+
+    .profile-info,
+    .profile-arrow,
+    .login-btn span{
+        display:none;
+    }
+
+    .profile-btn,
+    .login-btn{
+        width:42px;
+        padding:0;
+        justify-content:center;
+    }
+}
+
+@media(max-width:576px){
+    .header-inner{
+        gap:12px;
+    }
+
+    .main-logo{
+        height:46px;
+    }
+
+    .action-btn,
+    .mobile-menu-btn,
+    .login-btn{
+        width:38px;
+        height:38px;
+        border-radius:10px;
+    }
+
+    .profile-btn{
+        height:40px;
+        border-radius:12px;
+    }
+
+    .profile-img{
+        width:30px;
+        height:30px;
+    }
+}
+
+/* ============================================================
+   🌙 DARK MODE OVERRIDES
+   ============================================================ */
+[data-theme="dark"] .main-header {
+    background: #0d1510 !important;
+    border-bottom-color: #263a2e !important;
+}
+
+[data-theme="dark"] .main-header.scrolled {
+    background: #0d1510 !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3) !important;
+}
+
+[data-theme="dark"] .mobile-menu-btn {
+    background: #1b2620 !important;
+    color: #a5d6a7 !important;
+}
+
+[data-theme="dark"] .mobile-menu-btn:hover {
+    background: #1f2c24 !important;
+}
+
+[data-theme="dark"] .search-input {
+    background: #1b2620 !important;
+    border-color: #2f4638 !important;
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .search-input:focus {
+    background: #1f2c24 !important;
+    border-color: #a3e635 !important;
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: #6d7f72 !important;
+}
+
+[data-theme="dark"] .search-icon {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .action-btn {
+    background: #16201a !important;
+    border-color: #263a2e !important;
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .action-btn:hover {
+    background: #1f2c24 !important;
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .badge-dot,
+[data-theme="dark"] .badge-count {
+    border-color: #16201a !important;
+}
+
+[data-theme="dark"] .profile-btn {
+    background: #16201a !important;
+    border-color: #263a2e !important;
+}
+
+[data-theme="dark"] .profile-btn:hover {
+    background: #1f2c24 !important;
+}
+
+[data-theme="dark"] .profile-img {
+    border-color: #263a2e !important;
+}
+
+[data-theme="dark"] .profile-name {
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .profile-role,
+[data-theme="dark"] .profile-arrow {
+    color: #93a397 !important;
+}
+
+[data-theme="dark"] .profile-menu {
+    background: #16201a !important;
+    border-color: #263a2e !important;
+    box-shadow: 0 20px 35px rgba(0,0,0,.5) !important;
+}
+
+[data-theme="dark"] .profile-menu-item {
+    color: #e4ede6 !important;
+}
+
+[data-theme="dark"] .profile-menu-item:hover {
+    background: #1f2c24 !important;
+}
+
+[data-theme="dark"] .profile-divider {
+    background: #263a2e !important;
+}
+
+[data-theme="dark"] .logout-item {
+    color: #ef4444 !important;
+}
+
+/* 🛡️ GPU safety — disable blur in dark mode */
+[data-theme="dark"] * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+</style>
+
+<!-- ====================== JAVASCRIPT ====================== -->
+<script>
+(function () {
+    const btn = document.getElementById('themeToggle');
+    const icon = document.getElementById('themeIcon');
+
+    if (!btn) return;
+
+    function updateIcon() {
+        const isDark =
+            document.documentElement.getAttribute('data-theme') === 'dark';
+
+        if (icon) {
+            icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
+        }
+    }
+
+    updateIcon();
+
+    btn.addEventListener('click', function () {
+        const html = document.documentElement;
+
+        const next =
+            html.getAttribute('data-theme') === 'dark'
+                ? 'light'
+                : 'dark';
+
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+
+        updateIcon();
+    });
+
+})();
+
+/* Fullscreen toggle */
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+/* Scroll → toggle .scrolled class */
+window.addEventListener('scroll', function() {
+    var header = document.querySelector('.main-header');
+    if (!header) return;
+    if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+    } else {
+        header.classList.remove('scrolled');
+    }
+});
+
+/* Search keyboard shortcut: Ctrl/Cmd + K */
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        var s = document.getElementById('globalSearch');
+        if (s) s.focus();
+    }
+});
+
+/* Profile dropdown */
+(function() {
+    var profileBtn = document.getElementById('profileBtn');
+    var profileMenu = document.getElementById('profileMenu');
+    if (!profileBtn || !profileMenu) return;
+
+    profileBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        profileMenu.classList.toggle('active');
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+            profileMenu.classList.remove('active');
+        }
+    });
+})();
+</script>
