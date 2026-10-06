@@ -3,35 +3,53 @@
 {% block content %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* ============================================================
+   THEME TOKENS
+   ============================================================ */
+:root {
+    --primary-dark: #18311f;
+    --text-light: #7a887f;
+    --bg-light: #f4f7f1;
+    --green-1: #5d9c59;
+    --green-2: #7fbf5b;
+    --green-3: #2f5233;
+    --green-4: #a3e635;
+    --card: #fafdf7;
+    --surface: #ffffff;
+    --line: #e5e7eb;
+    --input-bg: #ffffff;
+    --danger: #e74c3c;
+    --facebook: #1877f2;
+}
+[data-theme="dark"] {
+    --primary-dark: #e4ede6;
+    --text-light: #93a397;
+    --bg-light: #0d1510;
+    --green-1: #6fb56a;
+    --green-2: #8ecf6a;
+    --green-3: #4a7a52;
+    --green-4: #a3e635;
+    --card: #16201a;
+    --surface: #16201a;
+    --line: #2f4638;
+    --input-bg: #1b2620;
+    --danger: #ef4444;
 }
 
-.error {
-    margin-top: 6px;
-}
-.error ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.error li {
-    color: #e74c3c;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    background: #f4f7f1;
+    background: var(--bg-light);
 }
 
+/* ============================================================
+   LAYOUT WRAPPER
+   ============================================================ */
 .auth-layout-wrap {
     min-height: calc(100vh - 120px);
     display: flex;
@@ -46,19 +64,25 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
     max-width: 980px;
     width: 100%;
-    background: #fafdf7;
+    background: var(--card);
+}
+[data-theme="dark"] .card {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
+/* ============================================================
+   LEFT PANEL (IMAGE)
+   ============================================================ */
 .auth-left {
-    background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)),
-                url("{% static 'dist-assets/images/photo-long-3.jpg' %}") center/cover no-repeat;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.45)),
+        url("{% static 'dist-assets/images/photo-long-3.jpg' %}") center/cover no-repeat;
     min-height: 620px;
     display: flex;
     flex-direction: column;
-    color: white;
+    color: #fff;
     position: relative;
 }
-
 .auth-left::before {
     content: '';
     position: absolute;
@@ -71,20 +95,19 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
+    z-index: 1;
 }
 
-/* ====================== LOGO ====================== */
-.auth-logo {
-    text-align: center;
-}
+.auth-logo { text-align: center; }
 .auth-logo img {
     width: 110px;
     height: 110px;
     border-radius: 50%;
     object-fit: cover;
-    background: #ffffff;
-    border: 6px solid #ffffff;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    background: #fff;
+    border: 6px solid #fff;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
     margin-bottom: 20px;
 }
 
@@ -104,46 +127,27 @@ body {
     line-height: 1.5;
 }
 
-/* Social Buttons */
-.social-buttons a {
-    width: 100%;
-    padding: 13px 16px;
-    border-radius: 12px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    text-decoration: none;
-    transition: box-shadow 0.3s ease;
-}
-.email { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
-.google { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
-.facebook { background: #1877f2; color: #fff; }
-.social-buttons a:hover {
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-}
-
-/* فرم */
+/* ============================================================
+   RIGHT PANEL (FORM)
+   ============================================================ */
 .form-side {
-    background: #fff;
+    background: var(--surface);
     padding: 2.8rem 2.5rem;
+    height: 100%;
 }
 .form-side h1 {
     font-size: 1.78rem;
     font-weight: 700;
-    color: #18311f;
+    color: var(--primary-dark);
     margin-bottom: 8px;
 }
 .form-subtitle {
-    color: #7a887f;
+    color: var(--text-light);
     margin-bottom: 28px;
     font-size: 0.95rem;
 }
-.form-group {
-    margin-bottom: 22px;
-}
+
+.form-group { margin-bottom: 22px; }
 .form-group .icon-label {
     display: flex;
     align-items: center;
@@ -151,55 +155,72 @@ body {
     margin-bottom: 8px;
     font-size: 0.84rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--primary-dark);
 }
 .form-group .icon-label i {
     font-size: 1.15rem;
-    color: #5d9c59;
+    color: var(--green-1);
     width: 20px;
 }
 .form-group input {
     width: 100%;
     padding: 13px 16px;
     border-radius: 12px;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--line);
     font-size: 0.96rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: inherit;
+    background: var(--input-bg);
+    color: var(--primary-dark);
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 .form-group input:focus {
-    border-color: #7fbf5b;
+    border-color: var(--green-2);
     box-shadow: 0 0 0 4px rgba(127, 191, 91, 0.15);
     outline: none;
 }
+.form-group input::placeholder {
+    color: var(--text-light);
+    opacity: 0.7;
+}
 
-/* دکمه */
+/* Errors */
+.error { margin-top: 6px; }
+.error ul { list-style: none; padding: 0; margin: 0; }
+.error li {
+    color: var(--danger);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Submit button */
 .btn-primary {
     width: 100%;
     padding: 14px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #4d8b31, #2f5233);
-    color: white;
+    background: linear-gradient(135deg, #4d8b31, var(--green-3));
+    color: #fff;
     font-weight: 600;
     font-size: 1.02rem;
+    font-family: inherit;
     margin-top: 12px;
     cursor: pointer;
-    transition: box-shadow 0.3s ease, background 0.3s ease;
+    transition: box-shadow 0.3s, background 0.3s;
 }
 .btn-primary:hover {
-    background: linear-gradient(135deg, #5d9c59, #3d7a47);
+    background: linear-gradient(135deg, var(--green-1), #3d7a47);
     box-shadow: 0 10px 25px rgba(77, 139, 49, 0.35);
 }
 
-/* لینک سوئیچ */
+/* Switch link */
 .auth-switch {
     text-align: center;
     margin-top: 25px;
     font-size: 0.94rem;
-    color: #6b7280;
+    color: var(--text-light);
 }
 .auth-switch a {
-    color: #5d9c59;
+    color: var(--green-1);
     font-weight: 600;
     text-decoration: none;
 }
@@ -207,99 +228,22 @@ body {
     color: #4d8b31;
     text-decoration: underline;
 }
+[data-theme="dark"] .auth-switch a:hover { color: var(--green-4); }
 
-/* ریسپانسیو */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 768px) {
     .auth-left { min-height: 420px; }
     .auth-logo img { width: 90px; height: 90px; }
     .form-side { padding: 2rem 1.8rem; }
 }
-
-/* ============================================================
-   🌙 DARK MODE OVERRIDES
-   ============================================================ */
-[data-theme="dark"] body {
-    background: #0d1510 !important;
-}
-
-[data-theme="dark"] .card {
-    background: #16201a !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
-}
-
-[data-theme="dark"] .form-side {
-    background: #16201a !important;
-}
-
-[data-theme="dark"] .form-side h1 {
-    color: #e4ede6 !important;
-}
-
-[data-theme="dark"] .form-subtitle {
-    color: #93a397 !important;
-}
-
-[data-theme="dark"] .form-group .icon-label {
-    color: #a5d6a7 !important;
-}
-
-[data-theme="dark"] .form-group .icon-label i {
-    color: #a3e635 !important;
-}
-
-[data-theme="dark"] .form-group input {
-    background: #1b2620 !important;
-    border-color: #2f4638 !important;
-    color: #e4ede6 !important;
-}
-
-[data-theme="dark"] .form-group input::placeholder {
-    color: #6d7f72 !important;
-}
-
-[data-theme="dark"] .form-group input:focus {
-    background: #1f2c24 !important;
-    border-color: #a3e635 !important;
-    box-shadow: 0 0 0 4px rgba(163, 230, 53, 0.15) !important;
-}
-
-[data-theme="dark"] .auth-switch {
-    color: #93a397 !important;
-}
-
-[data-theme="dark"] .auth-switch a {
-    color: #a3e635 !important;
-}
-
-[data-theme="dark"] .auth-switch a:hover {
-    color: #bef264 !important;
-}
-
-[data-theme="dark"] .error li {
-    color: #ef4444 !important;
-}
-
-[data-theme="dark"] .email,
-[data-theme="dark"] .google {
-    background: #1b2620 !important;
-    color: #e4ede6 !important;
-    border-color: #2f4638 !important;
-}
-
-[data-theme="dark"] .social-buttons a:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* 🛡️ GPU safety — disable blur in dark mode */
-[data-theme="dark"] * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
 </style>
+
 <div class="auth-layout-wrap">
     <div class="card">
         <div class="row g-0">
-            <!-- LEFT SIDE -->
+            <!-- LEFT -->
             <div class="col-md-6 auth-left">
                 <div class="auth-right">
                     <div class="auth-logo">
@@ -311,7 +255,8 @@ body {
                     </div>
                 </div>
             </div>
-            <!-- RIGHT SIDE - Form -->
+
+            <!-- RIGHT -->
             <div class="col-md-6">
                 <div class="form-side">
                     <h1>Create Account</h1>
@@ -327,9 +272,7 @@ body {
                                     <span>First Name</span>
                                 </div>
                                 {{ form.first_name }}
-                                <div class="error">
-                                    {{ form.first_name.errors }}
-                                </div>
+                                <div class="error">{{ form.first_name.errors }}</div>
                             </div>
                             <div class="col-md-6 form-group">
                                 <div class="icon-label">
@@ -337,9 +280,7 @@ body {
                                     <span>Last Name</span>
                                 </div>
                                 {{ form.last_name }}
-                                <div class="error">
-                                    {{ form.last_name.errors }}
-                                </div>
+                                <div class="error">{{ form.last_name.errors }}</div>
                             </div>
                         </div>
 

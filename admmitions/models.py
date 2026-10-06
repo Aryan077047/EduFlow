@@ -554,3 +554,27 @@ class PasswordResetOTP(models.Model):
     def consume(self):
         self.used_at = timezone.now()
         self.save(update_fields=['used_at'])
+
+
+class AIChatMessage(models.Model):
+    """One turn of the AI study assistant: the student/teacher's question and
+    the assistant's reply. Kept per user so the conversation continues across
+    page loads and can be cleared at any time."""
+
+    ROLE_CHOICES = (('user', 'Question'), ('assistant', 'Answer'))
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='ai_chat_messages'
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'AI chat message'
+        verbose_name_plural = 'AI chat messages'
+
+    def __str__(self):
+        return f'{self.user.email} - {self.role}: {self.content[:40]}'
+

@@ -159,13 +159,16 @@ MEDIA_ROOT=BASE_DIR / 'media'
 # To send real email, put your credentials in onlinestudy/email_settings_local.py
 # (created for you, gitignored) or export the EMAIL_* environment variables.
 
-OTP_EMAIL_SENDER_NAME = 'Online Study'
-OTP_EMAIL_SUBJECT = 'Your password reset code:'
+# Default: print emails to console in dev
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 try:
-    from .email_settings_local import *          # noqa: F401,F403
+    from .email_settings_local import *   # noqa
 except ImportError:
     pass
+
+OTP_EMAIL_SENDER_NAME = 'Online Study'
+OTP_EMAIL_SUBJECT = 'Your password reset code:'
 
 EMAIL_HOST = os.environ.get('EMAIL_HOST', globals().get('EMAIL_HOST', ''))
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', globals().get('EMAIL_PORT', 587) or 587))
@@ -176,7 +179,6 @@ EMAIL_HOST_PASSWORD = os.environ.get(
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '1') == '1'
 EMAIL_TIMEOUT = 15
 
-# Guard against the example values being left in place
 _PLACEHOLDERS = ('your.address', 'your-16-char', 'your-app-password', 'changeme')
 if any(token in EMAIL_HOST_USER.lower() or token in EMAIL_HOST_PASSWORD.lower()
        for token in _PLACEHOLDERS):
@@ -192,11 +194,19 @@ if EMAIL_HOST and EMAIL_HOST_PASSWORD:
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# True while no real mailbox is configured, so the UI can tell the user where
-# the code actually went instead of leaving them waiting for an email.
 EMAIL_CONSOLE_MODE = EMAIL_BACKEND.endswith('console.EmailBackend')
-
 # Largest course/playlist video the browser will attempt to upload. The server
 # itself imposes no limit, so keep this generous - a hard low cap silently
 # rejects legitimate files. Raise it if you serve very large lessons.
 PLAYLIST_MAX_UPLOAD_MB = 1024
+
+# ============ AI STUDY ASSISTANT (DeepSeek) ============
+# Get an API key at https://platform.deepseek.com and either export
+# DEEPSEEK_API_KEY or put DEEPSEEK_API_KEY = '...' in email_settings_local.py.
+# While it is empty, the assistant page explains how to enable it instead of
+# crashing.
+DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', globals().get('DEEPSEEK_API_KEY', ''))
+DEEPSEEK_BASE_URL = os.environ.get('DEEPSEEK_BASE_URL', globals().get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'))
+DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL', globals().get('DEEPSEEK_MODEL', 'deepseek-chat'))
+DEEPSEEK_TIMEOUT = int(os.environ.get('DEEPSEEK_TIMEOUT', '30'))
+AI_HISTORY_TURNS = 10

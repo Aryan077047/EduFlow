@@ -1,3 +1,5 @@
+import csv
+
 from django.shortcuts import render, redirect, get_object_or_404
 from .form import course_form, teacher_form, TeacherApplicationForm, ProfileImgForm, PlaylistForm
 from .form import ForgotPasswordForm, OTPVerifyForm, SetPasswordForm
@@ -5,7 +7,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 import secrets
 from django.contrib.auth.decorators import login_required
-from .models import Course, TeacherApplication, ProfileImg, Enrollment, Playlist, Lesson, Post, Comment, Like, Quiz, Question, Answer, QuizAttempt, StudentAnswer, PasswordResetOTP
+from .models import Course, TeacherApplication, ProfileImg, Enrollment, Playlist, Lesson, Post, Comment, Like, Quiz, Question, Answer, QuizAttempt, StudentAnswer, PasswordResetOTP, AIChatMessage
 from django.contrib.auth import login
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
@@ -238,8 +240,6 @@ def index(request):
     else:
         courses = courses.filter(is_published=True)
 
-    # Prefetch comments with their authors so the homepage does not run one
-    # query per course (and another per comment) inside the loop below.
     courses = courses.prefetch_related(
         Prefetch(
             'comments',
@@ -323,7 +323,6 @@ def user_login(request):
 
 SESSION_OTP_EMAIL   = 'otp_reset_email'
 SESSION_OTP_VERIFIED = 'otp_reset_verified'
-SESSION_OTP_DEV_CODE = 'otp_dev_code'
 
 
 def _send_otp_email(user, code):
@@ -359,8 +358,7 @@ def forgot_password(request):
     def back_to_start(**extra):
         request.session.pop(SESSION_OTP_EMAIL, None)
         request.session.pop(SESSION_OTP_VERIFIED, None)
-        request.session.pop(SESSION_OTP_DEV_CODE, None)
-        form = ForgotPasswordForm(request.POST.get('email') or None)
+        form = ForgotPasswordForm(initial={'email': request.POST.get('email') or None})
         ctx = {'form': form, 'step': 'request'}
         ctx.update(extra)
         return render(request, 'forgot_password.html', ctx)
@@ -393,12 +391,19 @@ def forgot_password(request):
         user = User.objects.filter(email__iexact=email).first()
 
         wait = 0
+        sent = True
         if user is not None:
             wait = _resend_wait(email)
             if wait <= 0:
-                _issue_otp(request, user)
-                request.session[SESSION_OTP_EMAIL] = user.email
+                _, sent = _issue_otp(user)
+                if sent:
+                    request.session[SESSION_OTP_EMAIL] = user.email
                 wait = _resend_wait(email)
+
+        if not sent:
+            return back_to_start(non_field_error=(
+                'We could not send the email right now. Please try again in a moment.'
+            ))
 
         return render(request, 'forgot_password.html', {
             'step': 'verify',
@@ -407,7 +412,6 @@ def forgot_password(request):
             'seconds_left': PasswordResetOTP.OTP_TTL_MINUTES * 60,
             'resend_in': wait,
             'console_mode': settings.EMAIL_CONSOLE_MODE,
-            'dev_code': request.session.get(SESSION_OTP_DEV_CODE) if settings.EMAIL_CONSOLE_MODE else None,
         })
 
     if step == 'verify':
@@ -432,7 +436,6 @@ def forgot_password(request):
 
         request.session[SESSION_OTP_VERIFIED] = email
         request.session.pop(SESSION_OTP_EMAIL, None)
-        request.session.pop(SESSION_OTP_DEV_CODE, None)
         return render(request, 'forgot_password.html', {
             'step': 'password',
             'form': SetPasswordForm(),
@@ -465,7 +468,6 @@ def forgot_password(request):
 
         request.session.pop(SESSION_OTP_VERIFIED, None)
         request.session.pop(SESSION_OTP_EMAIL, None)
-        request.session.pop(SESSION_OTP_DEV_CODE, None)
         login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         messages.success(request, 'Your password has been reset. You are now signed in.')
         return redirect('index')
@@ -482,24 +484,22 @@ def _latest_otp(email):
     )
 
 
-def _issue_otp(request, user):
+def _issue_otp(user):
+    code = f'{secrets.randbelow(10 ** PasswordResetOTP.OTP_LENGTH):0{PasswordResetOTP.OTP_LENGTH}d}'
+
+    if not _send_otp_email(user, code):
+        return None, False
+
     PasswordResetOTP.objects.filter(user=user, used_at__isnull=True).update(used_at=timezone.now())
 
-    code = f'{secrets.randbelow(10 ** PasswordResetOTP.OTP_LENGTH):0{PasswordResetOTP.OTP_LENGTH}d}'
     otp = PasswordResetOTP(
         user=user,
         expires_at=timezone.now() + timedelta(minutes=PasswordResetOTP.OTP_TTL_MINUTES),
     )
     otp.set_code(code)
     otp.save()
-    _send_otp_email(user, code)
 
-    if settings.EMAIL_CONSOLE_MODE:
-        request.session[SESSION_OTP_DEV_CODE] = code
-    else:
-        request.session.pop(SESSION_OTP_DEV_CODE, None)
-
-    return otp
+    return otp, True
 
 
 def _resend_wait(email):
@@ -530,7 +530,6 @@ def _verify_context(request, email, form, otp_error=''):
         'seconds_left': otp.seconds_left() if otp else 0,
         'resend_in': _resend_wait(email),
         'console_mode': settings.EMAIL_CONSOLE_MODE,
-        'dev_code': request.session.get(SESSION_OTP_DEV_CODE) if settings.EMAIL_CONSOLE_MODE else None,
     }
 
 
@@ -1280,7 +1279,6 @@ def submit_quiz(request):
                 status=400
             )
 
-        # Enforce the quiz's attempt limit ('1', '2', '3' or 'Unlimited').
         if quiz_obj.attempts_allowed != 'Unlimited':
             try:
                 allowed = int(quiz_obj.attempts_allowed)
@@ -1513,3 +1511,742 @@ def quiz_result(request, attempt_id):
         'is_teacher_view': is_teacher and not is_owner,
     }
     return render(request, 'quiz_result.html', context)
+
+
+# ============================================================
+# AI STUDY ASSISTANT — DeepSeek (students and teachers can ask)
+# ============================================================
+
+AI_SYSTEM_PROMPT = (
+    "You are the AI Study Assistant for the Online Study platform, used by both "
+    "students and teachers. Help with course topics, explain concepts simply, "
+    "summarize lessons, help teachers draft quiz questions, and suggest study "
+    "plans. Answer in clear, friendly language and keep replies focused. If "
+    "asked about something unrelated to studying or teaching, say politely that "
+    "you focus on learning topics and offer to help with one. Never do "
+    "homework-exam cheating - guide instead."
+)
+
+
+def _call_deepseek(messages):
+    """Call the DeepSeek chat completions API. Returns the reply text.
+
+    DeepSeek uses an OpenAI-compatible format. urllib keeps this dependency-free.
+    `messages` is an alternating list of {role: 'user'|'assistant', content}.
+    """
+    import json as _json
+    import urllib.request
+
+    api_messages = [{'role': 'system', 'content': AI_SYSTEM_PROMPT}]
+    for m in messages:
+        role = 'assistant' if m['role'] == 'assistant' else 'user'
+        api_messages.append({'role': role, 'content': m['content']})
+
+    payload = _json.dumps({
+        'model': settings.DEEPSEEK_MODEL,
+        'messages': api_messages,
+        'temperature': 0.7,
+        'max_tokens': 1024,
+        'stream': False,
+    }).encode('utf-8')
+
+    request = urllib.request.Request(
+        f'{settings.DEEPSEEK_BASE_URL}/chat/completions',
+        data=payload,
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {settings.DEEPSEEK_API_KEY}',
+        },
+        method='POST',
+    )
+    with urllib.request.urlopen(request, timeout=settings.DEEPSEEK_TIMEOUT) as response:
+        data = _json.loads(response.read().decode('utf-8'))
+
+    try:
+        return data['choices'][0]['message']['content'].strip()
+    except (KeyError, IndexError, TypeError):
+        raise RuntimeError('Unexpected DeepSeek API response shape.')
+
+
+@login_required
+def ai_assistant(request):
+    """Chat page. Shows the user's conversation history and, while no DeepSeek
+    API key is configured, explains how to enable the assistant."""
+    history = request.user.ai_chat_messages.all()
+    if request.user.role == 'teacher':
+        my_courses = Course.objects.filter(student=request.user)
+    else:
+        my_courses = Course.objects.filter(enrollment__student=request.user)
+    return render(request, 'ai_assistant.html', {
+        'history': history,
+        'ai_enabled': bool(settings.DEEPSEEK_API_KEY),
+        'my_courses': my_courses.order_by('title')[:20],
+    })
+
+
+def _ai_course_context(user):
+    """Short per-user context line the assistant receives with each question."""
+    if user.role == 'teacher':
+        titles = list(
+            Course.objects.filter(student=user)
+            .order_by('-published_at', 'title')
+            .values_list('title', flat=True)[:5]
+        )
+        if titles:
+            return f"The user is a teacher. Their courses on the platform: {', '.join(titles)}."
+        return 'The user is a teacher with no courses yet on the platform.'
+    titles = list(
+        Course.objects.filter(enrollment__student=user)
+        .order_by('title').values_list('title', flat=True)[:5]
+    )
+    if titles:
+        return f"The user is a student. Courses they are enrolled in: {', '.join(titles)}."
+    return 'The user is a student not enrolled in any course yet.'
+
+
+@login_required
+@require_POST
+def ask_ai(request):
+    """Receive {question, course_id?}, answer via DeepSeek, store both sides."""
+    if not settings.DEEPSEEK_API_KEY:
+        return JsonResponse({
+            'success': False,
+            'error': 'AI is not configured yet. Add DEEPSEEK_API_KEY and restart the server.',
+            'code': 'not_configured',
+        }, status=503)
+
+    try:
+        data = json.loads(request.body)
+    except (ValueError, TypeError):
+        data = request.POST
+
+    question = (data.get('question') or '').strip()
+    if not question:
+        return JsonResponse({'success': False, 'error': 'Please type a question.'}, status=400)
+    if len(question) > 2000:
+        return JsonResponse(
+            {'success': False, 'error': 'Questions are limited to 2000 characters.'},
+            status=400,
+        )
+
+    course = None
+    course_id = data.get('course_id')
+    if course_id:
+        course = Course.objects.filter(id=course_id).first()
+
+    prior = list(
+        request.user.ai_chat_messages.order_by('-created_at')
+        .values('role', 'content')[: settings.AI_HISTORY_TURNS * 2]
+    )
+    prior.reverse()
+
+    api_messages = [{'role': 'user', 'content': _ai_course_context(request.user)}]
+    if course is not None:
+        api_messages.append({
+            'role': 'assistant',
+            'content': f'Understood. Your question is about the course "{course.title}".',
+        })
+    api_messages += prior + [{'role': 'user', 'content': question}]
+
+    try:
+        reply = _call_deepseek(api_messages)
+    except Exception as exc:
+        return JsonResponse({
+            'success': False,
+            'error': 'The AI service is unavailable right now. Please try again shortly.',
+            'detail': f'{type(exc).__name__}: {exc}' if settings.DEBUG else '',
+        }, status=502)
+
+    AIChatMessage.objects.bulk_create([
+        AIChatMessage(user=request.user, role='user', content=question),
+        AIChatMessage(user=request.user, role='assistant', content=reply),
+    ])
+    return JsonResponse({
+        'success': True,
+        'reply': reply,
+        'question': question,
+    })
+
+
+@login_required
+@require_POST
+def clear_ai_chat(request):
+    """Delete the user's whole conversation."""
+    deleted, _ = request.user.ai_chat_messages.all().delete()
+    return JsonResponse({'success': True, 'deleted': deleted})
+
+
+# ============================================================
+# ADMIN — PLATFORM DATA ANALYSIS REPORT
+# ============================================================
+
+def _growth_pct(current, previous):
+    """Signed percentage change, tolerant of a zero baseline."""
+    if previous == 0:
+        return None
+    return round(((current - previous) / previous) * 100, 1)
+
+
+def _build_analytics():
+    """Compute the whole platform report as a plain dict. Shared by the
+    HTML page and the CSV export so the two can never disagree."""
+    now = timezone.now()
+    today = now.date()
+
+    overview = {
+        'users': User.objects.count(),
+        'students': User.objects.filter(role='student').count(),
+        'teachers': User.objects.filter(role='teacher').count(),
+        'courses': Course.objects.count(),
+        'published_courses': Course.objects.filter(is_published=True).count(),
+        'draft_courses': Course.objects.filter(is_published=False).count(),
+        'enrollments': Enrollment.objects.count(),
+        'videos': Playlist.objects.count(),
+        'quizzes': Quiz.objects.count(),
+        'published_quizzes': Quiz.objects.filter(is_published=True).count(),
+        'quiz_attempts': QuizAttempt.objects.count(),
+        'submitted_attempts': QuizAttempt.objects.filter(
+            status__in=['submitted', 'graded']).count(),
+        'comments': Comment.objects.count(),
+        'likes': Like.objects.count(),
+        'posts': Post.objects.count(),
+        'pending_applications': TeacherApplication.objects.filter(status='pending').count(),
+        'approved_applications': TeacherApplication.objects.filter(status='approved').count(),
+        'rejected_applications': TeacherApplication.objects.filter(status='rejected').count(),
+        'password_resets': PasswordResetOTP.objects.count(),
+        'ai_messages': AIChatMessage.objects.count(),
+    }
+    overview['avg_courses_per_teacher'] = (
+        round(overview['courses'] / overview['teachers'], 1)
+        if overview['teachers'] else 0
+    )
+    overview['avg_enrollments_per_student'] = (
+        round(overview['enrollments'] / overview['students'], 1)
+        if overview['students'] else 0
+    )
+
+    daily = []
+    for i in range(13, -1, -1):
+        day = today - timedelta(days=i)
+        daily.append({
+            'date': day.strftime('%b %d'),
+            'users': User.objects.filter(date_joined__date=day).count(),
+            'enrollments': Enrollment.objects.filter(enrolled_at__date=day).count(),
+            'attempts': QuizAttempt.objects.filter(started_at__date=day).count(),
+            'comments': Comment.objects.filter(created_at__date=day).count(),
+        })
+
+    week_start = today - timedelta(days=6)
+    prev_start = week_start - timedelta(days=7)
+    growth = {
+        'users': _growth_pct(
+            User.objects.filter(date_joined__date__gte=week_start).count(),
+            User.objects.filter(
+                date_joined__date__gte=prev_start,
+                date_joined__date__lt=week_start,
+            ).count(),
+        ),
+        'enrollments': _growth_pct(
+            Enrollment.objects.filter(enrolled_at__date__gte=week_start).count(),
+            Enrollment.objects.filter(
+                enrolled_at__date__gte=prev_start,
+                enrolled_at__date__lt=week_start,
+            ).count(),
+        ),
+    }
+
+    cat_counts = {
+        row['category']: row['c']
+        for row in Course.objects.values('category').annotate(c=Count('id'))
+    }
+    courses_by_category = sorted(
+        (
+            {'label': label, 'count': cat_counts.get(code, 0)}
+            for code, label in Course.COURSE_CATEGORY
+        ),
+        key=lambda row: -row['count'],
+    )
+    level_counts = {
+        row['level']: row['c']
+        for row in Course.objects.values('level').annotate(c=Count('id'))
+    }
+    courses_by_level = [
+        {'label': label, 'count': level_counts.get(code, 0)}
+        for code, label in Course.COURSE_LEVEL
+    ]
+
+    top_courses = (
+        Course.objects
+        .select_related('student')
+        .annotate(
+            enrollments_count=Count('enrollment', distinct=True),
+            likes_count=Count('likes', distinct=True),
+            comments_count=Count('comments', distinct=True),
+            videos_count=Count('playlists', distinct=True),
+        )
+        .order_by('-enrollments_count', '-likes_count', '-comments_count')[:10]
+    )
+
+    top_teachers = (
+        User.objects
+        .filter(role='teacher')
+        .annotate(
+            courses_count=Count('course', distinct=True),
+            enrollments_received=Count('course__enrollment', distinct=True),
+            likes_received=Count('course__likes', distinct=True),
+        )
+        .order_by('-enrollments_received', '-courses_count')[:10]
+    )
+
+    top_students = (
+        User.objects
+        .filter(role='student')
+        .annotate(
+            enrollments_count=Count('enrollment', distinct=True),
+            attempts_count=Count('quiz_attempts', distinct=True),
+            comments_count=Count('comment', distinct=True),
+        )
+        .order_by('-enrollments_count', '-attempts_count')[:10]
+    )
+
+    quiz_rows = []
+    quizzes = Quiz.objects.select_related('course', 'teacher').annotate(
+        attempts_total=Count('attempts', distinct=True),
+    )
+    for quiz in quizzes:
+        finished = list(quiz.attempts.filter(status__in=['submitted', 'graded']))
+        quiz_rows.append({
+            'quiz': quiz,
+            'course': quiz.course,
+            'teacher': quiz.teacher,
+            'attempts_total': quiz.attempts_total,
+            'finished': len(finished),
+            'passed': sum(1 for a in finished if a.passed),
+            'avg_pct': (
+                round(sum(a.percentage for a in finished) / len(finished), 1)
+                if finished else None
+            ),
+        })
+    quiz_rows.sort(key=lambda row: (-row['attempts_total'], row['quiz'].title))
+
+    submitted_total = sum(row['finished'] for row in quiz_rows)
+    passed_total = sum(row['passed'] for row in quiz_rows)
+    avg_pct_overall = None
+    if submitted_total:
+        pct_sum, pct_count = 0, 0
+        for attempt in QuizAttempt.objects.filter(
+            status__in=['submitted', 'graded']
+        ).select_related('quiz'):
+            pct_sum += attempt.percentage
+            pct_count += 1
+        avg_pct_overall = round(pct_sum / pct_count, 1) if pct_count else None
+
+    quiz_summary = {
+        'submitted': submitted_total,
+        'passed': passed_total,
+        'failed': submitted_total - passed_total,
+        'pass_rate': (
+            round(passed_total / submitted_total * 100, 1)
+            if submitted_total else 0
+        ),
+        'avg_pct': avg_pct_overall,
+    }
+
+    recent_enrollments = (
+        Enrollment.objects
+        .select_related('student', 'course')
+        .order_by('-enrolled_at')[:12]
+    )
+    recent_attempts = (
+        QuizAttempt.objects
+        .filter(status__in=['submitted', 'graded'])
+        .select_related('student', 'quiz', 'quiz__course')
+        .order_by('-submitted_at', '-started_at')[:12]
+    )
+    recent_comments = (
+        Comment.objects
+        .select_related('user', 'course')
+        .order_by('-created_at')[:8]
+    )
+
+    courses_max = max(
+        [row['count'] for row in courses_by_category]
+        + [row['count'] for row in courses_by_level] + [1]
+    )
+
+    return {
+        'generated_at': now,
+        'overview': overview,
+        'growth': growth,
+        'daily': daily,
+        'courses_by_category': courses_by_category,
+        'courses_by_level': courses_by_level,
+        'courses_max': courses_max,
+        'top_courses': top_courses,
+        'top_teachers': top_teachers,
+        'top_students': top_students,
+        'quiz_rows': quiz_rows,
+        'quiz_summary': quiz_summary,
+        'recent_enrollments': recent_enrollments,
+        'recent_attempts': recent_attempts,
+        'recent_comments': recent_comments,
+    }
+
+
+@login_required
+def admin_analytics(request):
+    """Superuser-only data analysis report covering every model."""
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to view the analytics report.")
+        return redirect('index')
+    return render(request, 'admin_analytics.html', _build_analytics())
+
+
+@login_required
+def admin_analytics_csv(request):
+    """Download the same report as a CSV file."""
+    if not request.user.is_superuser:
+        return HttpResponseForbidden('Admins only.')
+
+    report = _build_analytics()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = (
+        f'attachment; filename="onlinestudy-report-{timezone.now():%Y-%m-%d}.csv"'
+    )
+    writer = csv.writer(response)
+
+    writer.writerow(['Online Study - Platform Data Analysis Report'])
+    writer.writerow(['Generated', report['generated_at'].strftime('%Y-%m-%d %H:%M')])
+    writer.writerow([])
+
+    writer.writerow(['OVERVIEW'])
+    for key, value in report['overview'].items():
+        writer.writerow([key.replace('_', ' ').title(), value])
+    writer.writerow([])
+
+    writer.writerow(['DAILY ACTIVITY (LAST 14 DAYS)'])
+    writer.writerow(['Date', 'New Users', 'New Enrollments', 'Quiz Attempts', 'Comments'])
+    for row in report['daily']:
+        writer.writerow([row['date'], row['users'], row['enrollments'], row['attempts'], row['comments']])
+    writer.writerow([])
+
+    writer.writerow(['COURSES BY CATEGORY'])
+    for row in report['courses_by_category']:
+        if row['count']:
+            writer.writerow([row['label'], row['count']])
+    writer.writerow([])
+
+    writer.writerow(['COURSES BY LEVEL'])
+    for row in report['courses_by_level']:
+        if row['count']:
+            writer.writerow([row['label'], row['count']])
+    writer.writerow([])
+
+    writer.writerow(['TOP COURSES BY ENGAGEMENT'])
+    writer.writerow(['Course', 'Teacher', 'Published', 'Enrollments', 'Likes', 'Comments', 'Videos'])
+    for c in report['top_courses']:
+        writer.writerow([
+            c.title, c.student.email, 'Yes' if c.is_published else 'No',
+            c.enrollments_count, c.likes_count, c.comments_count, c.videos_count,
+        ])
+    writer.writerow([])
+
+    writer.writerow(['TOP TEACHERS'])
+    writer.writerow(['Teacher', 'Courses', 'Enrollments Received', 'Likes Received'])
+    for t in report['top_teachers']:
+        writer.writerow([t.email, t.courses_count, t.enrollments_received, t.likes_received])
+    writer.writerow([])
+
+    writer.writerow(['TOP STUDENTS'])
+    writer.writerow(['Student', 'Enrollments', 'Quiz Attempts', 'Comments'])
+    for s in report['top_students']:
+        writer.writerow([s.email, s.enrollments_count, s.attempts_count, s.comments_count])
+    writer.writerow([])
+
+    writer.writerow(['QUIZ PERFORMANCE'])
+    writer.writerow(['Quiz', 'Course', 'Teacher', 'Attempts', 'Submitted', 'Passed', 'Avg %'])
+    for row in report['quiz_rows']:
+        writer.writerow([
+            row['quiz'].title,
+            row['course'].title if row['course'] else '-',
+            row['teacher'].email if row['teacher'] else '-',
+            row['attempts_total'], row['finished'], row['passed'],
+            row['avg_pct'] if row['avg_pct'] is not None else '-',
+        ])
+    writer.writerow([])
+
+    summary = report['quiz_summary']
+    writer.writerow(['QUIZ SUMMARY'])
+    writer.writerow(['Submitted', summary['submitted']])
+    writer.writerow(['Passed', summary['passed']])
+    writer.writerow(['Failed', summary['failed']])
+    writer.writerow(['Pass Rate %', summary['pass_rate']])
+    writer.writerow(['Average Score %', summary['avg_pct'] if summary['avg_pct'] is not None else '-'])
+    writer.writerow([])
+
+    writer.writerow(['RECENT ENROLLMENTS'])
+    writer.writerow(['Student', 'Course', 'Date'])
+    for e in report['recent_enrollments']:
+        writer.writerow([e.student.email, e.course.title, e.enrolled_at.strftime('%Y-%m-%d %H:%M')])
+
+    return response
+
+
+# ============================================================
+# TEACHER — MY DATA ANALYSIS REPORT (scoped to one teacher)
+# ============================================================
+
+def _build_teacher_analytics(teacher):
+    """Compute the teacher's own report as a plain dict, scoped strictly to
+    the courses this teacher owns and the quizzes they created. Shared by
+    the HTML page and the CSV export so the two can never disagree."""
+    now = timezone.now()
+    today = now.date()
+
+    courses = Course.objects.filter(student=teacher)
+    quizzes = Quiz.objects.filter(
+        Q(teacher=teacher) | Q(course__student=teacher)
+    ).distinct()
+    course_ids = list(courses.values_list('id', flat=True))
+
+    enrollments = Enrollment.objects.filter(course_id__in=course_ids)
+    attempts = QuizAttempt.objects.filter(quiz__in=quizzes)
+    submitted = attempts.filter(status__in=['submitted', 'graded'])
+
+    submitted_count = submitted.count()
+    passed_count = 0
+    pct_sum = 0.0
+    for attempt in submitted:          # passed/percentage are Python props
+        if attempt.passed:
+            passed_count += 1
+        pct_sum += attempt.percentage
+
+    overview = {
+        'courses': courses.count(),
+        'published_courses': courses.filter(is_published=True).count(),
+        'draft_courses': courses.filter(is_published=False).count(),
+        'enrollments': enrollments.count(),
+        'unique_students': enrollments.values('student_id').distinct().count(),
+        'videos': Playlist.objects.filter(course_id__in=course_ids).count(),
+        'lessons': Lesson.objects.filter(course_id__in=course_ids).count(),
+        'quizzes': quizzes.count(),
+        'published_quizzes': quizzes.filter(is_published=True).count(),
+        'quiz_attempts': attempts.count(),
+        'submitted_attempts': submitted_count,
+        'comments': Comment.objects.filter(course_id__in=course_ids).count(),
+        'likes': Like.objects.filter(course_id__in=course_ids).count(),
+    }
+    overview['avg_enrollments_per_course'] = (
+        round(overview['enrollments'] / overview['courses'], 1)
+        if overview['courses'] else 0
+    )
+    overview['pass_rate'] = (
+        round(passed_count / submitted_count * 100, 1)
+        if submitted_count else 0
+    )
+    overview['avg_score'] = (
+        round(pct_sum / submitted_count, 1) if submitted_count else None
+    )
+
+    # ---- daily activity, last 14 days (this teacher's data only) ----
+    daily = []
+    for i in range(13, -1, -1):
+        day = today - timedelta(days=i)
+        daily.append({
+            'date': day.strftime('%b %d'),
+            'enrollments': enrollments.filter(enrolled_at__date=day).count(),
+            'attempts': attempts.filter(started_at__date=day).count(),
+            'comments': Comment.objects.filter(
+                course_id__in=course_ids, created_at__date=day).count(),
+        })
+
+    week_start = today - timedelta(days=6)
+    prev_start = week_start - timedelta(days=7)
+    growth = {
+        'enrollments': _growth_pct(
+            enrollments.filter(enrolled_at__date__gte=week_start).count(),
+            enrollments.filter(
+                enrolled_at__date__gte=prev_start,
+                enrolled_at__date__lt=week_start,
+            ).count(),
+        ),
+    }
+
+    # ---- per-course table ----
+    course_rows = list(
+        courses.select_related('student').annotate(
+            enrollments_count=Count('enrollment', distinct=True),
+            likes_count=Count('likes', distinct=True),
+            comments_count=Count('comments', distinct=True),
+            videos_count=Count('playlists', distinct=True),
+            lessons_count=Count('lessons', distinct=True),
+        ).order_by('-enrollments_count', '-likes_count', 'title')
+    )
+    courses_max = 1
+    for row in course_rows:
+        courses_max = max(
+            courses_max, row.enrollments_count, row.likes_count,
+            row.comments_count, row.videos_count,
+        )
+
+    # ---- per-quiz performance (percentage is a Python property) ----
+    quiz_rows = []
+    for quiz in quizzes.select_related('course').annotate(
+        attempts_total=Count('attempts', distinct=True),
+    ):
+        finished = list(quiz.attempts.filter(status__in=['submitted', 'graded']))
+        quiz_rows.append({
+            'quiz': quiz,
+            'course': quiz.course,
+            'attempts_total': quiz.attempts_total,
+            'finished': len(finished),
+            'passed': sum(1 for a in finished if a.passed),
+            'avg_pct': (
+                round(sum(a.percentage for a in finished) / len(finished), 1)
+                if finished else None
+            ),
+        })
+    quiz_rows.sort(key=lambda row: (-row['attempts_total'], row['quiz'].title))
+
+    # ---- most active students inside this teacher's courses ----
+    top_students = list(
+        User.objects
+        .filter(role='student', enrollment__course_id__in=course_ids)
+        .distinct()
+        .annotate(
+            enrollments_count=Count(
+                'enrollment',
+                filter=Q(enrollment__course_id__in=course_ids),
+                distinct=True,
+            ),
+            attempts_count=Count(
+                'quiz_attempts',
+                filter=Q(quiz_attempts__quiz__in=quizzes),
+                distinct=True,
+            ),
+            comments_count=Count(
+                'comment',
+                filter=Q(comment__course_id__in=course_ids),
+                distinct=True,
+            ),
+        )
+        .order_by('-enrollments_count', '-attempts_count', 'email')[:10]
+    )
+
+    recent_enrollments = (
+        enrollments.select_related('student', 'course').order_by('-enrolled_at')[:12]
+    )
+    recent_attempts = (
+        submitted.select_related('student', 'quiz', 'quiz__course')
+        .order_by('-submitted_at', '-started_at')[:8]
+    )
+    recent_comments = (
+        Comment.objects.filter(course_id__in=course_ids)
+        .select_related('user', 'course')
+        .order_by('-created_at')[:8]
+    )
+
+    return {
+        'generated_at': now,
+        'teacher': teacher,
+        'overview': overview,
+        'growth': growth,
+        'daily': daily,
+        'course_rows': course_rows,
+        'courses_max': courses_max,
+        'quiz_rows': quiz_rows,
+        'quiz_summary': {
+            'submitted': submitted_count,
+            'passed': passed_count,
+            'failed': submitted_count - passed_count,
+            'pass_rate': overview['pass_rate'],
+            'avg_pct': overview['avg_score'],
+        },
+        'top_students': top_students,
+        'recent_enrollments': recent_enrollments,
+        'recent_attempts': recent_attempts,
+        'recent_comments': recent_comments,
+    }
+
+
+@login_required
+def teacher_analytics(request):
+    """The logged-in teacher's own data analysis report (superusers may
+    preview their own too)."""
+    if not (request.user.is_superuser or request.user.role == 'teacher'):
+        messages.error(request, "You don't have permission to view the analytics report.")
+        return redirect('index')
+    return render(request, 'teacher_analytics.html', _build_teacher_analytics(request.user))
+
+
+@login_required
+def teacher_analytics_csv(request):
+    """Download the teacher's own report as a CSV file."""
+    if not (request.user.is_superuser or request.user.role == 'teacher'):
+        return HttpResponseForbidden('Teachers only.')
+
+    report = _build_teacher_analytics(request.user)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = (
+        f'attachment; filename="onlinestudy-teacher-report-{timezone.now():%Y-%m-%d}.csv"'
+    )
+    writer = csv.writer(response)
+
+    writer.writerow(['Online Study - Teacher Data Analysis Report'])
+    writer.writerow(['Teacher', report['teacher'].email])
+    writer.writerow(['Generated', report['generated_at'].strftime('%Y-%m-%d %H:%M')])
+    writer.writerow([])
+
+    writer.writerow(['OVERVIEW'])
+    for key, value in report['overview'].items():
+        writer.writerow([key.replace('_', ' ').title(), value])
+    writer.writerow([])
+
+    writer.writerow(['DAILY ACTIVITY (LAST 14 DAYS)'])
+    writer.writerow(['Date', 'New Enrollments', 'Quiz Attempts', 'Comments'])
+    for row in report['daily']:
+        writer.writerow([row['date'], row['enrollments'], row['attempts'], row['comments']])
+    writer.writerow([])
+
+    writer.writerow(['MY COURSES'])
+    writer.writerow(['Course', 'Status', 'Price', 'Enrollments', 'Likes', 'Comments', 'Videos', 'Lessons'])
+    for c in report['course_rows']:
+        writer.writerow([
+            c.title, 'Published' if c.is_published else 'Draft', c.Course_price,
+            c.enrollments_count, c.likes_count, c.comments_count,
+            c.videos_count, c.lessons_count,
+        ])
+    writer.writerow([])
+
+    writer.writerow(['QUIZ PERFORMANCE'])
+    writer.writerow(['Quiz', 'Course', 'Attempts', 'Submitted', 'Passed', 'Avg %'])
+    for row in report['quiz_rows']:
+        writer.writerow([
+            row['quiz'].title,
+            row['course'].title if row['course'] else '-',
+            row['attempts_total'], row['finished'], row['passed'],
+            row['avg_pct'] if row['avg_pct'] is not None else '-',
+        ])
+    writer.writerow([])
+
+    summary = report['quiz_summary']
+    writer.writerow(['QUIZ SUMMARY'])
+    writer.writerow(['Submitted', summary['submitted']])
+    writer.writerow(['Passed', summary['passed']])
+    writer.writerow(['Failed', summary['failed']])
+    writer.writerow(['Pass Rate %', summary['pass_rate']])
+    writer.writerow(['Average Score %', summary['avg_pct'] if summary['avg_pct'] is not None else '-'])
+    writer.writerow([])
+
+    writer.writerow(['MOST ACTIVE STUDENTS'])
+    writer.writerow(['Student', 'Enrollments', 'Quiz Attempts', 'Comments'])
+    for s in report['top_students']:
+        writer.writerow([s.email, s.enrollments_count, s.attempts_count, s.comments_count])
+    writer.writerow([])
+
+    writer.writerow(['RECENT ENROLLMENTS'])
+    writer.writerow(['Student', 'Course', 'Date'])
+    for e in report['recent_enrollments']:
+        writer.writerow([e.student.email, e.course.title, e.enrolled_at.strftime('%Y-%m-%d %H:%M')])
+
+    return response

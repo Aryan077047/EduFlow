@@ -4,681 +4,478 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Take Quiz · GreenLMS</title>
-
-  <!-- 🌙 Dark mode — set theme BEFORE CSS loads -->
-  <script>
-  (function () {
-      try {
-          var saved = localStorage.getItem('theme');
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
-      } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'light');
-      }
-  })();
-  </script>
+  <title>Take Quiz · EduFlow</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
+    /* ==================== THEME TOKENS ==================== */
     :root {
-      --primary-dark: #18311f;
-      --text-light:   #7d8f82;
-      --bg-light:     #f4f7f1;
-      --green-1:      #5d9c59;
-      --green-2:      #7fbf5b;
-      --green-3:      #2f5233;
-      --green-4:      #a3e635;
-      --red-1:        #dc2626;
-      --red-2:        #d62839;
-      --gold-1:       #eab308;
-      --gold-2:       #ca8a04;
-      --blue-1:       #3b82f6;
-      --purple-1:     #8b5cf6;
+      --primary-dark:#18311f;
+      --text-light:#7d8f82;
+      --bg-light:#f4f7f1;
+      --green-1:#5d9c59;
+      --green-2:#7fbf5b;
+      --green-3:#2f5233;
+      --green-4:#a3e635;
+      --red-1:#dc2626;
+      --gold-1:#eab308;
+      --gold-2:#ca8a04;
+      --blue-1:#3b82f6;
+
+      --card:#ffffff;
+      --surface:#fafcf7;
+      --line:#e6efe0;
+      --line-soft:#eef4e9;
+      --input-bg:#f6faf2;
+      --text-placeholder:#a8baa4;
+    }
+    [data-theme="dark"] {
+      --primary-dark:#e4ede6;
+      --text-light:#93a397;
+      --bg-light:#0d1510;
+      --green-1:#6fb56a;
+      --green-2:#7fbf5b;
+      --green-3:#4a7a52;
+      --green-4:#a3e635;
+      --red-1:#fca5a5;
+      --gold-1:#fde047;
+      --gold-2:#ca8a04;
+      --blue-1:#7dd3fc;
+
+      --card:#16201a;
+      --surface:#14201a;
+      --line:#2f4638;
+      --line-soft:#263a2e;
+      --input-bg:#1b2620;
+      --text-placeholder:#6d7f72;
     }
 
-    html { overflow-x: hidden; }
-
+    html { overflow-x:hidden; }
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin:0; padding:0; box-sizing:border-box;
+      font-family:'Plus Jakarta Sans', sans-serif;
     }
-
     body {
-      background: var(--bg-light);
-      color: var(--primary-dark);
-      min-height: 100vh;
+      background:var(--bg-light);
+      color:var(--primary-dark);
+      min-height:100vh;
     }
 
-    /* ====================== TOP BAR ====================== */
+    /* ==================== TOP BAR ==================== */
     .topbar {
-      background: #fff;
-      border-bottom: 1px solid rgba(127,191,91,.2);
-      padding: 0 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 68px;
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      box-shadow: 0 2px 12px rgba(24,49,31,.04);
+      background:var(--card);
+      border-bottom:1px solid var(--line);
+      padding:0 2rem;
+      display:flex; align-items:center; justify-content:space-between;
+      height:68px; position:sticky; top:0; z-index:20;
+      box-shadow:0 2px 12px rgba(24,49,31,.04);
     }
-
-    .topbar-brand { display: flex; align-items: center; gap: 11px; }
-
+    .topbar-brand { display:flex; align-items:center; gap:11px; }
     .topbar-brand .mark {
-      width: 38px; height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, var(--green-2), var(--green-4));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.05rem;
-      color: var(--green-3);
-      box-shadow: 0 4px 12px rgba(163,230,53,.25);
+      width:38px; height:38px; border-radius:11px;
+      background:linear-gradient(135deg, var(--green-2), var(--green-4));
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.05rem; color:var(--green-3);
+      box-shadow:0 4px 12px rgba(163,230,53,.25);
     }
-
     .topbar-brand h2 {
-      font-size: 1rem; font-weight: 800;
-      letter-spacing: -.3px; color: var(--primary-dark);
+      font-size:1rem; font-weight:800;
+      letter-spacing:-.3px; color:var(--primary-dark);
     }
-    .topbar-brand h2 span { color: var(--green-1); }
+    .topbar-brand h2 span { color:var(--green-1); }
 
-    .topbar-actions { display: flex; align-items: center; gap: 12px; }
+    .topbar-actions { display:flex; align-items:center; gap:12px; }
 
-    /* timer chip */
     .timer-chip {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: .55rem 1rem;
-      border-radius: 40px;
-      background: rgba(234,179,8,.13);
-      border: 1px solid rgba(234,179,8,.35);
-      color: var(--gold-2);
-      font-size: .82rem;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
+      display:inline-flex; align-items:center; gap:8px;
+      padding:.55rem 1rem; border-radius:40px;
+      background:rgba(234,179,8,.13);
+      border:1px solid rgba(234,179,8,.35);
+      color:var(--gold-2);
+      font-size:.82rem; font-weight:800;
+      font-variant-numeric:tabular-nums;
     }
-    .timer-chip i { color: var(--gold-1); font-size: .8rem; }
-
+    .timer-chip i { color:var(--gold-1); font-size:.8rem; }
     .timer-chip.danger {
-      background: rgba(220,38,38,.1);
-      border-color: rgba(220,38,38,.4);
-      color: var(--red-1);
+      background:rgba(220,38,38,.1);
+      border-color:rgba(220,38,38,.4);
+      color:var(--red-1);
     }
-    .timer-chip.danger i { color: var(--red-1); }
+    .timer-chip.danger i { color:var(--red-1); }
 
-    /* back button */
     .btn {
-      border: none;
-      padding: .78rem 1.5rem;
-      border-radius: 40px;
-      font-weight: 800; font-size: .83rem;
-      letter-spacing: .3px; cursor: pointer;
-      transition: all .2s ease;
-      display: inline-flex; align-items: center; justify-content: center;
-      gap: 8px; font-family: inherit; white-space: nowrap;
+      border:none; padding:.78rem 1.5rem; border-radius:40px;
+      font-weight:800; font-size:.83rem; letter-spacing:.3px;
+      cursor:pointer; transition:all .2s ease;
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px; font-family:inherit; white-space:nowrap;
     }
-
     .btn-line {
-      background: transparent; color: var(--green-3);
-      border: 2px solid #d6e6cb;
+      background:transparent; color:var(--green-3);
+      border:2px solid var(--line);
+      text-decoration:none;
     }
-    .btn-line:hover { background: #f1f7ec; border-color: var(--green-2); }
-
+    .btn-line:hover { background:var(--surface); border-color:var(--green-2); }
     .btn-green {
-      background: linear-gradient(135deg, var(--green-3), var(--green-1));
-      color: #fff;
-      box-shadow: 0 8px 18px -8px rgba(93,156,89,.7);
+      background:linear-gradient(135deg, var(--green-3), var(--green-1));
+      color:#fff;
+      box-shadow:0 8px 18px -8px rgba(93,156,89,.7);
     }
-    .btn-green:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(93,156,89,.8); }
-
+    .btn-green:hover { transform:translateY(-2px); }
     .btn-gold {
-      background: linear-gradient(135deg, var(--gold-2), var(--gold-1));
-      color: #fff;
-      box-shadow: 0 8px 18px -8px rgba(202,138,4,.7);
+      background:linear-gradient(135deg, var(--gold-2), var(--gold-1));
+      color:#fff;
+      box-shadow:0 8px 18px -8px rgba(202,138,4,.7);
     }
-    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(202,138,4,.8); }
+    .btn-gold:hover { transform:translateY(-2px); }
+    .btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
 
     .topbar-user {
-      display: flex; align-items: center; gap: 12px;
-      padding-left: 12px; border-left: 1px solid #eef4e9;
+      display:flex; align-items:center; gap:12px;
+      padding-left:12px; border-left:1px solid var(--line-soft);
     }
     .topbar-user .avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--green-1), var(--green-3));
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 700; font-size: .82rem;
-      box-shadow: 0 3px 10px rgba(47,82,51,.2);
-      overflow: hidden;
-      flex-shrink: 0;
+      width:38px; height:38px; border-radius:50%;
+      background:linear-gradient(135deg, var(--green-1), var(--green-3));
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:700; font-size:.82rem;
+      overflow:hidden; flex-shrink:0;
     }
-    .topbar-user .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
-    .topbar-user .name { font-size: .85rem; font-weight: 700; }
-    .topbar-user .role { font-size: .7rem; color: var(--text-light); font-weight: 500; }
+    .topbar-user .avatar img {
+      width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;
+    }
+    .topbar-user .name { font-size:.85rem; font-weight:700; }
+    .topbar-user .role { font-size:.7rem; color:var(--text-light); font-weight:500; }
 
-    /* ====================== LAYOUT ====================== */
+    /* ==================== LAYOUT ==================== */
     .layout {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem 3rem;
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 1.6rem;
-      align-items: start;
+      max-width:1180px; margin:0 auto;
+      padding:2rem 1.5rem 3rem;
+      display:grid; grid-template-columns:1fr 320px;
+      gap:1.6rem; align-items:start;
     }
+    .main-col { display:flex; flex-direction:column; gap:1.4rem; }
 
-    .main-col { display: flex; flex-direction: column; gap: 1.4rem; }
-
-    /* ---------- quiz header banner ---------- */
+    /* ==================== QUIZ BANNER ==================== */
     .quiz-banner {
-      background: linear-gradient(135deg, #18311f 0%, #2f5233 100%);
-      border-radius: 22px;
-      padding: 1.8rem 2rem;
-      color: #fff;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 18px 40px -14px rgba(24,49,31,.4);
+      background:linear-gradient(135deg, #18311f 0%, #2f5233 100%);
+      border-radius:22px; padding:1.8rem 2rem;
+      color:#fff; position:relative; overflow:hidden;
+      box-shadow:0 18px 40px -14px rgba(24,49,31,.4);
     }
-
     .quiz-banner::before {
-      content: "";
-      position: absolute;
-      width: 260px; height: 260px;
-      background: radial-gradient(circle, rgba(163,230,53,.22), transparent 70%);
-      top: -100px; right: -80px;
-      border-radius: 50%;
+      content:""; position:absolute;
+      width:260px; height:260px;
+      background:radial-gradient(circle, rgba(163,230,53,.22), transparent 70%);
+      top:-100px; right:-80px; border-radius:50%;
     }
-
     .quiz-banner .qb-cat {
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: .7rem; font-weight: 800;
-      letter-spacing: 1.2px; text-transform: uppercase;
-      background: rgba(163,230,53,.18);
-      border: 1px solid rgba(163,230,53,.35);
-      color: var(--green-4);
-      padding: .35rem .9rem; border-radius: 30px;
-      position: relative; z-index: 1;
-      margin-bottom: .9rem;
+      display:inline-flex; align-items:center; gap:7px;
+      font-size:.7rem; font-weight:800;
+      letter-spacing:1.2px; text-transform:uppercase;
+      background:rgba(163,230,53,.18);
+      border:1px solid rgba(163,230,53,.35);
+      color:var(--green-4);
+      padding:.35rem .9rem; border-radius:30px;
+      position:relative; z-index:1; margin-bottom:.9rem;
     }
-
     .quiz-banner h1 {
-      font-size: 1.6rem; font-weight: 800;
-      letter-spacing: -.6px; line-height: 1.2;
-      position: relative; z-index: 1;
-      margin-bottom: .5rem;
+      font-size:1.6rem; font-weight:800;
+      letter-spacing:-.6px; line-height:1.2;
+      position:relative; z-index:1; margin-bottom:.5rem;
     }
-
     .quiz-banner p {
-      font-size: .87rem; color: rgba(255,255,255,.7);
-      font-weight: 500; line-height: 1.6;
-      position: relative; z-index: 1;
-      max-width: 520px;
+      font-size:.87rem; color:rgba(255,255,255,.7);
+      font-weight:500; line-height:1.6;
+      position:relative; z-index:1; max-width:520px;
     }
-
     .quiz-banner .qb-stats {
-      display: flex; gap: 1.6rem;
-      margin-top: 1.4rem; flex-wrap: wrap;
-      position: relative; z-index: 1;
+      display:flex; gap:1.6rem; margin-top:1.4rem;
+      flex-wrap:wrap; position:relative; z-index:1;
     }
-
     .qb-stats .stat strong {
-      display: block; font-size: 1.15rem;
-      font-weight: 800; color: var(--green-4);
-      line-height: 1.1;
+      display:block; font-size:1.15rem; font-weight:800;
+      color:var(--green-4); line-height:1.1;
     }
     .qb-stats .stat span {
-      font-size: .72rem; color: rgba(255,255,255,.55);
-      font-weight: 600; letter-spacing: .5px;
-      text-transform: uppercase;
+      font-size:.72rem; color:rgba(255,255,255,.55);
+      font-weight:600; letter-spacing:.5px; text-transform:uppercase;
     }
 
-    /* ---------- progress bar ---------- */
+    /* ==================== PROGRESS ==================== */
     .progress-block {
-      background: #fff;
-      border-radius: 18px;
-      padding: 1.1rem 1.4rem;
-      border: 1px solid rgba(127,191,91,.18);
-      box-shadow: 0 6px 20px -12px rgba(24,49,31,.12);
-      display: flex; flex-direction: column; gap: .6rem;
+      background:var(--card); border-radius:18px;
+      padding:1.1rem 1.4rem;
+      border:1px solid var(--line);
+      box-shadow:0 6px 20px -12px rgba(24,49,31,.12);
+      display:flex; flex-direction:column; gap:.6rem;
     }
-
     .progress-top {
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: .8rem; font-weight: 700;
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:.8rem; font-weight:700;
     }
-    .progress-top .label { color: var(--text-light); display: flex; align-items: center; gap: 7px; }
-    .progress-top .label i { color: var(--green-1); }
-    .progress-top .value { color: var(--green-3); font-variant-numeric: tabular-nums; }
-
+    .progress-top .label {
+      color:var(--text-light);
+      display:flex; align-items:center; gap:7px;
+    }
+    .progress-top .label i { color:var(--green-1); }
+    .progress-top .value { color:var(--green-3); font-variant-numeric:tabular-nums; }
+    [data-theme="dark"] .progress-top .value { color:var(--green-4); }
     .progress-track {
-      height: 10px; background: #e9f0e4;
-      border-radius: 40px; overflow: hidden;
+      height:10px; background:var(--line-soft);
+      border-radius:40px; overflow:hidden;
     }
     .progress-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, var(--green-1), var(--green-4));
-      border-radius: 40px;
-      transition: width .4s ease;
+      height:100%; width:0%;
+      background:linear-gradient(90deg, var(--green-1), var(--green-4));
+      border-radius:40px; transition:width .4s ease;
     }
 
-    /* ---------- question card ---------- */
+    /* ==================== QUESTION CARD ==================== */
     .question-card {
-      background: #fff;
-      border-radius: 22px;
-      padding: 1.8rem 1.8rem 1.6rem;
-      border: 1px solid rgba(127,191,91,.18);
-      box-shadow: 0 6px 24px -12px rgba(24,49,31,.12);
-      display: flex; flex-direction: column; gap: 1.4rem;
+      background:var(--card); border-radius:22px;
+      padding:1.8rem 1.8rem 1.6rem;
+      border:1px solid var(--line);
+      box-shadow:0 6px 24px -12px rgba(24,49,31,.12);
+      display:flex; flex-direction:column; gap:1.4rem;
     }
-
     .q-top {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 1rem; flex-wrap: wrap;
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:1rem; flex-wrap:wrap;
     }
-
     .q-number {
-      display: inline-flex; align-items: center; gap: 9px;
-      font-size: .74rem; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 1px;
-      color: var(--green-3);
-      background: rgba(127,191,91,.13);
-      padding: .4rem .9rem; border-radius: 30px;
+      display:inline-flex; align-items:center; gap:9px;
+      font-size:.74rem; font-weight:800;
+      text-transform:uppercase; letter-spacing:1px;
+      color:var(--green-3);
+      background:rgba(127,191,91,.13);
+      padding:.4rem .9rem; border-radius:30px;
     }
-
+    [data-theme="dark"] .q-number { color:var(--green-4); }
     .q-number .num {
-      width: 20px; height: 20px; border-radius: 6px;
-      background: linear-gradient(135deg, var(--green-2), var(--green-4));
-      color: var(--green-3);
-      display: flex; align-items: center; justify-content: center;
-      font-size: .68rem; font-weight: 800;
+      width:20px; height:20px; border-radius:6px;
+      background:linear-gradient(135deg, var(--green-2), var(--green-4));
+      color:var(--green-3);
+      display:flex; align-items:center; justify-content:center;
+      font-size:.68rem; font-weight:800;
     }
-
-    .q-tags { display: flex; gap: .5rem; flex-wrap: wrap; }
-
+    .q-tags { display:flex; gap:.5rem; flex-wrap:wrap; }
     .q-tag {
-      font-size: .68rem; font-weight: 800;
-      letter-spacing: .5px; text-transform: uppercase;
-      padding: .3rem .7rem; border-radius: 20px;
+      font-size:.68rem; font-weight:800;
+      letter-spacing:.5px; text-transform:uppercase;
+      padding:.3rem .7rem; border-radius:20px;
     }
-    .q-tag.easy   { background: rgba(127,191,91,.15);  color: var(--green-3); }
-    .q-tag.medium { background: rgba(234,179,8,.14);   color: var(--gold-2); }
-    .q-tag.hard   { background: rgba(220,38,38,.1);    color: var(--red-1); }
-    .q-tag.points { background: rgba(59,130,246,.12);  color: var(--blue-1); }
+    .q-tag.easy   { background:rgba(127,191,91,.15); color:var(--green-3); }
+    .q-tag.medium { background:rgba(234,179,8,.14);  color:var(--gold-2); }
+    .q-tag.hard   { background:rgba(220,38,38,.1);   color:var(--red-1); }
+    .q-tag.points { background:rgba(59,130,246,.12); color:var(--blue-1); }
 
     .q-text {
-      font-size: 1.15rem; font-weight: 700;
-      line-height: 1.5; color: var(--primary-dark);
-      letter-spacing: -.2px;
+      font-size:1.15rem; font-weight:700;
+      line-height:1.5; color:var(--primary-dark);
+      letter-spacing:-.2px;
     }
 
-    /* ---------- answer options ---------- */
-    .answers { display: flex; flex-direction: column; gap: .7rem; }
-
+    /* ==================== ANSWERS ==================== */
+    .answers { display:flex; flex-direction:column; gap:.7rem; }
     .answer {
-      display: flex; align-items: center; gap: 14px;
-      padding: 1rem 1.2rem;
-      border-radius: 14px;
-      border: 1.5px solid #e6efe0;
-      background: #fafcf7;
-      cursor: pointer;
-      transition: all .18s ease;
-      user-select: none;
-      position: relative;
+      display:flex; align-items:center; gap:14px;
+      padding:1rem 1.2rem; border-radius:14px;
+      border:1.5px solid var(--line);
+      background:var(--surface);
+      cursor:pointer; transition:all .18s ease;
+      user-select:none; position:relative;
     }
-
     .answer:hover {
-      border-color: var(--green-2);
-      background: #f4faf0;
-      transform: translateX(3px);
+      border-color:var(--green-2);
+      background:var(--surface);
+      transform:translateX(3px);
     }
-
-    .answer input { display: none; }
-
+    .answer input { display:none; }
     .answer .letter {
-      width: 34px; height: 34px; flex-shrink: 0;
-      border-radius: 10px;
-      background: #fff;
-      border: 1.5px solid #dbe8d3;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: .85rem;
-      color: var(--text-light);
-      transition: all .18s;
+      width:34px; height:34px; flex-shrink:0;
+      border-radius:10px; background:var(--card);
+      border:1.5px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:.85rem;
+      color:var(--text-light); transition:all .18s;
     }
-
     .answer .text {
-      font-size: .92rem; font-weight: 600;
-      color: var(--primary-dark); line-height: 1.4;
+      font-size:.92rem; font-weight:600;
+      color:var(--primary-dark); line-height:1.4;
     }
-
-    /* selected state */
     .answer.selected {
-      border-color: var(--green-1);
-      background: linear-gradient(135deg, rgba(127,191,91,.12), rgba(163,230,53,.06));
-      box-shadow: 0 0 0 3px rgba(127,191,91,.15);
+      border-color:var(--green-1);
+      background:linear-gradient(135deg, rgba(127,191,91,.12), rgba(163,230,53,.06));
+      box-shadow:0 0 0 3px rgba(127,191,91,.15);
     }
     .answer.selected .letter {
-      background: linear-gradient(135deg, var(--green-2), var(--green-4));
-      border-color: transparent;
-      color: var(--green-3);
+      background:linear-gradient(135deg, var(--green-2), var(--green-4));
+      border-color:transparent; color:var(--green-3);
     }
 
-    /* ---------- explanation textarea ---------- */
-    .explain-answer {
-      display: flex; flex-direction: column; gap: .5rem;
-    }
+    /* ==================== EXPLANATION ==================== */
+    .explain-answer { display:flex; flex-direction:column; gap:.5rem; }
     .explain-answer label {
-      font-size: .72rem; font-weight: 800; color: var(--green-3);
-      letter-spacing: .6px; text-transform: uppercase;
+      font-size:.72rem; font-weight:800; color:var(--green-3);
+      letter-spacing:.6px; text-transform:uppercase;
     }
+    [data-theme="dark"] .explain-answer label { color:var(--green-4); }
     .explain-answer textarea {
-      background: #f6faf2;
-      border: 1.5px solid #e2ecdb;
-      border-radius: 14px;
-      padding: 1rem 1.1rem;
-      font-size: .9rem; font-weight: 500;
-      color: var(--primary-dark);
-      outline: none;
-      transition: all .2s;
-      width: 100%;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 140px;
-      line-height: 1.6;
+      background:var(--input-bg);
+      border:1.5px solid var(--line);
+      border-radius:14px; padding:1rem 1.1rem;
+      font-size:.9rem; font-weight:500;
+      color:var(--primary-dark); outline:none;
+      transition:all .2s; width:100%;
+      font-family:inherit; resize:vertical;
+      min-height:140px; line-height:1.6;
     }
     .explain-answer textarea:focus {
-      border-color: var(--green-2);
-      background: #fff;
-      box-shadow: 0 0 0 4px rgba(127,191,91,.14);
+      border-color:var(--green-2);
+      background:var(--card);
+      box-shadow:0 0 0 4px rgba(127,191,91,.14);
     }
-    .explain-answer textarea::placeholder { color: #a8baa4; }
+    .explain-answer textarea::placeholder { color:var(--text-placeholder); }
 
     .explain-hint {
-      font-size: .74rem;
-      color: var(--text-light);
-      font-weight: 600;
-      display: flex; align-items: center; gap: 6px;
+      font-size:.74rem; color:var(--text-light);
+      font-weight:600; display:flex; align-items:center; gap:6px;
     }
-    .explain-hint i { color: var(--blue-1); }
+    .explain-hint i { color:var(--blue-1); }
 
-    /* ---------- navigation buttons ---------- */
+    /* ==================== NAV BUTTONS ==================== */
     .q-nav {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem; flex-wrap: wrap;
-      padding-top: 1.3rem;
-      border-top: 1px solid #eef4e9;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:1rem; flex-wrap:wrap;
+      padding-top:1.3rem; border-top:1px solid var(--line-soft);
     }
+    .nav-group { display:flex; gap:.7rem; flex-wrap:wrap; }
 
-    .nav-group { display: flex; gap: .7rem; flex-wrap: wrap; }
-    .nav-group .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
-
-    /* ---------- sidebar ---------- */
+    /* ==================== SIDEBAR ==================== */
     .side-col {
-      display: flex; flex-direction: column; gap: 1.2rem;
-      position: sticky; top: 90px;
+      display:flex; flex-direction:column; gap:1.2rem;
+      position:sticky; top:90px;
     }
-
     .side-card {
-      background: #fff;
-      border-radius: 20px;
-      border: 1px solid rgba(127,191,91,.18);
-      box-shadow: 0 6px 24px -12px rgba(24,49,31,.15);
-      overflow: hidden;
+      background:var(--card); border-radius:20px;
+      border:1px solid var(--line);
+      box-shadow:0 6px 24px -12px rgba(24,49,31,.15);
+      overflow:hidden;
     }
-
     .side-head {
-      padding: 1rem 1.3rem;
-      border-bottom: 1px solid #eef4e9;
-      background: #fafcf7;
-      display: flex; align-items: center; gap: 9px;
-      font-size: .74rem; font-weight: 800;
-      letter-spacing: 1px; text-transform: uppercase;
-      color: var(--green-3);
+      padding:1rem 1.3rem;
+      border-bottom:1px solid var(--line-soft);
+      background:var(--surface);
+      display:flex; align-items:center; gap:9px;
+      font-size:.74rem; font-weight:800;
+      letter-spacing:1px; text-transform:uppercase;
+      color:var(--green-3);
     }
-    .side-head i { color: var(--green-1); }
+    [data-theme="dark"] .side-head { color:var(--green-4); }
+    .side-head i { color:var(--green-1); }
+    .side-body { padding:1.2rem 1.3rem; display:flex; flex-direction:column; gap:1rem; }
 
-    .side-body { padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: 1rem; }
-
-    /* question map grid */
     .q-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: .55rem;
+      display:grid; grid-template-columns:repeat(5, 1fr);
+      gap:.55rem;
     }
-
     .q-dot {
-      aspect-ratio: 1;
-      border-radius: 11px;
-      border: 1.5px solid #e2ecdb;
-      background: #fafcf7;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: .82rem;
-      color: var(--text-light);
-      cursor: pointer;
-      transition: all .18s;
+      aspect-ratio:1; border-radius:11px;
+      border:1.5px solid var(--line);
+      background:var(--surface);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800; font-size:.82rem;
+      color:var(--text-light); cursor:pointer;
+      transition:all .18s;
     }
-    .q-dot:hover { border-color: var(--green-2); color: var(--green-3); }
-
+    .q-dot:hover { border-color:var(--green-2); color:var(--green-3); }
     .q-dot.answered {
-      background: linear-gradient(135deg, var(--green-2), var(--green-4));
-      color: var(--green-3); border-color: transparent;
+      background:linear-gradient(135deg, var(--green-2), var(--green-4));
+      color:var(--green-3); border-color:transparent;
     }
     .q-dot.current {
-      background: linear-gradient(135deg, var(--green-3), var(--green-1));
-      color: #fff; border-color: transparent;
-      box-shadow: 0 0 0 3px rgba(93,156,89,.25);
-      transform: scale(1.05);
+      background:linear-gradient(135deg, var(--green-3), var(--green-1));
+      color:#fff; border-color:transparent;
+      box-shadow:0 0 0 3px rgba(93,156,89,.25);
+      transform:scale(1.05);
     }
 
     .grid-legend {
-      display: flex; flex-direction: column; gap: .5rem;
-      margin-top: 1.2rem; padding-top: 1.1rem;
-      border-top: 1px solid #eef4e9;
+      display:flex; flex-direction:column; gap:.5rem;
+      margin-top:1.2rem; padding-top:1.1rem;
+      border-top:1px solid var(--line-soft);
     }
     .legend-item {
-      display: flex; align-items: center; gap: 9px;
-      font-size: .75rem; font-weight: 600; color: var(--text-light);
+      display:flex; align-items:center; gap:9px;
+      font-size:.75rem; font-weight:600; color:var(--text-light);
     }
     .legend-item .swatch {
-      width: 14px; height: 14px; border-radius: 5px; flex-shrink: 0;
+      width:14px; height:14px; border-radius:5px; flex-shrink:0;
     }
-    .swatch.done    { background: linear-gradient(135deg, var(--green-2), var(--green-4)); }
-    .swatch.now     { background: linear-gradient(135deg, var(--green-3), var(--green-1)); }
-    .swatch.todo    { background: #fafcf7; border: 1.5px solid #e2ecdb; }
+    .swatch.done { background:linear-gradient(135deg, var(--green-2), var(--green-4)); }
+    .swatch.now  { background:linear-gradient(135deg, var(--green-3), var(--green-1)); }
+    .swatch.todo { background:var(--surface); border:1.5px solid var(--line); }
 
-    /* quiz info list */
-    .info-list { display: flex; flex-direction: column; gap: .9rem; }
+    .info-list { display:flex; flex-direction:column; gap:.9rem; }
     .info-item {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:1rem;
     }
     .info-item .k {
-      font-size: .78rem; font-weight: 600; color: var(--text-light);
-      display: flex; align-items: center; gap: 8px;
+      font-size:.78rem; font-weight:600; color:var(--text-light);
+      display:flex; align-items:center; gap:8px;
     }
-    .info-item .k i { color: var(--green-1); font-size: .8rem; width: 14px; }
-    .info-item .v { font-size: .84rem; font-weight: 800; color: var(--primary-dark); }
+    .info-item .k i { color:var(--green-1); font-size:.8rem; width:14px; }
+    .info-item .v { font-size:.84rem; font-weight:800; color:var(--primary-dark); }
 
-    /* submit button in sidebar */
-    .submit-wrap .btn { width: 100%; }
+    .submit-wrap .btn { width:100%; }
     .submit-note {
-      text-align: center;
-      font-size: .72rem;
-      color: var(--text-light);
-      font-weight: 600;
-      margin-top: .7rem;
+      text-align:center; font-size:.72rem;
+      color:var(--text-light); font-weight:600;
+      margin-top:.7rem;
     }
 
-    /* ====================== RESPONSIVE ====================== */
-    @media (max-width: 920px) {
-      .layout { grid-template-columns: 1fr; }
-      .side-col { position: static; }
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width:920px) {
+      .layout { grid-template-columns:1fr; }
+      .side-col { position:static; }
     }
-
-    @media (max-width: 600px) {
-      .topbar { padding: 0 1rem; height: 62px; }
-      .topbar-user .name, .topbar-user .role { display: none; }
-      .topbar-brand h2 { display: none; }
-      .timer-chip { font-size: .74rem; padding: .4rem .7rem; }
-      .layout { padding: 1.4rem 1rem 2.5rem; }
-      .quiz-banner { padding: 1.4rem 1.3rem; }
-      .quiz-banner h1 { font-size: 1.25rem; }
-      .question-card { padding: 1.3rem 1.2rem; border-radius: 18px; }
-      .q-text { font-size: 1rem; }
-      .q-nav { flex-direction: column-reverse; align-items: stretch; }
-      .nav-group { justify-content: stretch; }
-      .nav-group .btn { flex: 1; }
-      .q-grid { grid-template-columns: repeat(6, 1fr); }
-    }
-
-    /* ============================================================
-       🌙 DARK MODE
-       ============================================================ */
-    [data-theme="dark"] body {
-      background: #0d1510 !important;
-      color: #e4ede6 !important;
-    }
-
-    [data-theme="dark"] .topbar {
-      background: #16201a !important;
-      border-bottom-color: #263a2e !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,.4) !important;
-    }
-    [data-theme="dark"] .topbar-brand h2 { color: #e4ede6 !important; }
-    [data-theme="dark"] .topbar-user { border-left-color: #263a2e !important; }
-    [data-theme="dark"] .topbar-user .name { color: #e4ede6 !important; }
-    [data-theme="dark"] .topbar-user .role { color: #93a397 !important; }
-
-    [data-theme="dark"] .btn-line {
-      color: #a5d6a7 !important;
-      border-color: #2f4638 !important;
-    }
-    [data-theme="dark"] .btn-line:hover {
-      background: #1f2c24 !important;
-      border-color: #a3e635 !important;
-    }
-
-    [data-theme="dark"] .timer-chip {
-      background: rgba(234,179,8,.15) !important;
-      border-color: rgba(234,179,8,.4) !important;
-      color: #fde047 !important;
-    }
-    [data-theme="dark"] .timer-chip.danger {
-      background: rgba(239,68,68,.15) !important;
-      border-color: rgba(239,68,68,.4) !important;
-      color: #fca5a5 !important;
-    }
-
-    [data-theme="dark"] .progress-block,
-    [data-theme="dark"] .question-card,
-    [data-theme="dark"] .side-card {
-      background: #16201a !important;
-      border-color: #263a2e !important;
-      box-shadow: 0 6px 24px -12px rgba(0,0,0,.5) !important;
-    }
-
-    [data-theme="dark"] .progress-top .label { color: #93a397 !important; }
-    [data-theme="dark"] .progress-top .value { color: #a5d6a7 !important; }
-    [data-theme="dark"] .progress-track { background: #1f2c24 !important; }
-
-    [data-theme="dark"] .q-number {
-      background: rgba(127,191,91,.2) !important;
-      color: #a5d6a7 !important;
-    }
-
-    [data-theme="dark"] .q-text { color: #e4ede6 !important; }
-
-    [data-theme="dark"] .answer {
-      background: #1b2620 !important;
-      border-color: #2f4638 !important;
-    }
-    [data-theme="dark"] .answer:hover {
-      border-color: #a3e635 !important;
-      background: #1f2c24 !important;
-    }
-    [data-theme="dark"] .answer .letter {
-      background: #16201a !important;
-      border-color: #2f4638 !important;
-      color: #93a397 !important;
-    }
-    [data-theme="dark"] .answer .text { color: #e4ede6 !important; }
-    [data-theme="dark"] .answer.selected {
-      border-color: #a3e635 !important;
-      background: linear-gradient(135deg, rgba(163,230,53,.15), rgba(163,230,53,.05)) !important;
-    }
-    [data-theme="dark"] .answer.selected .letter {
-      background: linear-gradient(135deg, #7fbf5b, #a3e635) !important;
-      color: #18311f !important;
-    }
-
-    [data-theme="dark"] .explain-answer label { color: #a5d6a7 !important; }
-    [data-theme="dark"] .explain-answer textarea {
-      background: #1b2620 !important;
-      border-color: #2f4638 !important;
-      color: #e4ede6 !important;
-    }
-    [data-theme="dark"] .explain-answer textarea::placeholder { color: #6d7f72 !important; }
-    [data-theme="dark"] .explain-answer textarea:focus {
-      background: #1f2c24 !important;
-      border-color: #a3e635 !important;
-      box-shadow: 0 0 0 4px rgba(163,230,53,.15) !important;
-    }
-
-    [data-theme="dark"] .q-nav { border-top-color: #263a2e !important; }
-
-    [data-theme="dark"] .side-head {
-      background: #14201a !important;
-      border-bottom-color: #263a2e !important;
-      color: #a5d6a7 !important;
-    }
-
-    [data-theme="dark"] .q-dot {
-      background: #1b2620 !important;
-      border-color: #2f4638 !important;
-      color: #93a397 !important;
-    }
-    [data-theme="dark"] .q-dot.answered {
-      background: linear-gradient(135deg, #7fbf5b, #a3e635) !important;
-      color: #18311f !important;
-    }
-    [data-theme="dark"] .q-dot.current {
-      background: linear-gradient(135deg, #2f5233, #5d9c59) !important;
-      color: #fff !important;
-    }
-    [data-theme="dark"] .swatch.todo {
-      background: #1b2620 !important;
-      border-color: #2f4638 !important;
-    }
-
-    [data-theme="dark"] .info-item .v { color: #e4ede6 !important; }
-
-    /* GPU safety */
-    [data-theme="dark"] .topbar,
-    [data-theme="dark"] .question-card,
-    [data-theme="dark"] .side-card,
-    [data-theme="dark"] .progress-block {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
+    @media (max-width:600px) {
+      .topbar { padding:0 1rem; height:62px; }
+      .topbar-user .name, .topbar-user .role { display:none; }
+      .topbar-brand h2 { display:none; }
+      .timer-chip { font-size:.74rem; padding:.4rem .7rem; }
+      .layout { padding:1.4rem 1rem 2.5rem; }
+      .quiz-banner { padding:1.4rem 1.3rem; }
+      .quiz-banner h1 { font-size:1.25rem; }
+      .question-card { padding:1.3rem 1.2rem; border-radius:18px; }
+      .q-text { font-size:1rem; }
+      .q-nav { flex-direction:column-reverse; align-items:stretch; }
+      .nav-group { justify-content:stretch; }
+      .nav-group .btn { flex:1; }
+      .q-grid { grid-template-columns:repeat(6, 1fr); }
     }
   </style>
 </head>
 <body>
 
-  <!-- ✅ Django context for JS -->
+  <!-- ==================== DJANGO CONTEXT ==================== -->
   <script>
-    window.QUIZ_ID = {{ quiz.id|default:"null" }};
-    window.CSRF_TOKEN = "{{ csrf_token }}";
+    window.QUIZ_ID       = {{ quiz.id|default:"null" }};
+    window.CSRF_TOKEN    = "{{ csrf_token }}";
     window.QUIZ_DURATION = {{ quiz.duration|default:30 }};
-    window.SUBMIT_URL = "{% url 'submit_quiz' %}";
+    window.SUBMIT_URL    = "{% url 'submit_quiz' %}";
   </script>
 
+  <!-- ==================== TOP BAR ==================== -->
   <header class="topbar">
     <div class="topbar-brand">
       <div class="mark"><i class="fas fa-graduation-cap"></i></div>
-      <h2>Green<span>LMS</span></h2>
+      <h2>Edu<span>Flow</span></h2>
     </div>
 
     <div class="topbar-actions">
@@ -710,12 +507,13 @@
     </div>
   </header>
 
+  <!-- ==================== LAYOUT ==================== -->
   <div class="layout">
 
-    <!-- ================= MAIN COLUMN ================= -->
+    <!-- MAIN COLUMN -->
     <main class="main-col">
 
-      <!-- Quiz header banner -->
+      <!-- Banner -->
       <div class="quiz-banner">
         <span class="qb-cat">
           <i class="fas fa-flask"></i>
@@ -723,27 +521,13 @@
           {% if quiz.chapter %} · {{ quiz.chapter }}{% endif %}
         </span>
         <h1>{{ quiz.title|default:"Untitled Quiz" }}</h1>
-        {% if quiz.description %}
-        <p>{{ quiz.description }}</p>
-        {% endif %}
+        {% if quiz.description %}<p>{{ quiz.description }}</p>{% endif %}
 
         <div class="qb-stats">
-          <div class="stat">
-            <strong>{{ quiz.questions.count|default:0 }}</strong>
-            <span>Questions</span>
-          </div>
-          <div class="stat">
-            <strong>{{ quiz.duration|default:30 }}m</strong>
-            <span>Duration</span>
-          </div>
-          <div class="stat">
-            <strong>{{ quiz.passing_score|default:70 }}%</strong>
-            <span>To pass</span>
-          </div>
-          <div class="stat">
-            <strong>{{ quiz.total_points|default:0 }}</strong>
-            <span>Points</span>
-          </div>
+          <div class="stat"><strong>{{ quiz.questions.count|default:0 }}</strong><span>Questions</span></div>
+          <div class="stat"><strong>{{ quiz.duration|default:30 }}m</strong><span>Duration</span></div>
+          <div class="stat"><strong>{{ quiz.passing_score|default:70 }}%</strong><span>To pass</span></div>
+          <div class="stat"><strong>{{ quiz.total_points|default:0 }}</strong><span>Points</span></div>
         </div>
       </div>
 
@@ -758,7 +542,7 @@
         </div>
       </div>
 
-      <!-- ================= QUESTION CARD ================= -->
+      <!-- Question card -->
       <div class="question-card" id="questionCard">
         <div class="q-top">
           <div class="q-number">
@@ -773,14 +557,9 @@
           </div>
         </div>
 
-        <div class="q-text" id="questionText">
-          Loading question...
-        </div>
-
-        <!-- answers will be injected here -->
+        <div class="q-text" id="questionText">Loading question...</div>
         <div class="answers" id="answersContainer"></div>
 
-        <!-- navigation -->
         <div class="q-nav">
           <div class="nav-group">
             <button class="btn btn-line" id="prevBtn" type="button" disabled>
@@ -800,17 +579,13 @@
 
     </main>
 
-    <!-- ================= SIDEBAR ================= -->
+    <!-- SIDEBAR -->
     <aside class="side-col">
 
-      <!-- question map -->
       <div class="side-card">
         <div class="side-head"><i class="fas fa-table-cells"></i> Question Map</div>
         <div class="side-body">
-          <div class="q-grid" id="qGrid">
-            <!-- filled by JS -->
-          </div>
-
+          <div class="q-grid" id="qGrid"></div>
           <div class="grid-legend">
             <div class="legend-item"><span class="swatch done"></span> Answered</div>
             <div class="legend-item"><span class="swatch now"></span> Current</div>
@@ -819,36 +594,19 @@
         </div>
       </div>
 
-      <!-- quiz info -->
       <div class="side-card">
         <div class="side-head"><i class="fas fa-circle-info"></i> Quiz Details</div>
         <div class="side-body">
           <div class="info-list">
-            <div class="info-item">
-              <div class="k"><i class="fas fa-book"></i> Subject</div>
-              <div class="v">{{ quiz.subject|default:"—" }}</div>
-            </div>
-            <div class="info-item">
-              <div class="k"><i class="fas fa-layer-group"></i> Chapter</div>
-              <div class="v">{{ quiz.chapter|default:"—" }}</div>
-            </div>
-            <div class="info-item">
-              <div class="k"><i class="fas fa-star"></i> Total points</div>
-              <div class="v">{{ quiz.total_points|default:0 }} pts</div>
-            </div>
-            <div class="info-item">
-              <div class="k"><i class="fas fa-percent"></i> Passing score</div>
-              <div class="v">{{ quiz.passing_score|default:70 }}%</div>
-            </div>
-            <div class="info-item">
-              <div class="k"><i class="fas fa-redo"></i> Attempt</div>
-              <div class="v">1 of {{ quiz.attempts_allowed|default:2 }}</div>
-            </div>
+            <div class="info-item"><div class="k"><i class="fas fa-book"></i> Subject</div><div class="v">{{ quiz.subject|default:"—" }}</div></div>
+            <div class="info-item"><div class="k"><i class="fas fa-layer-group"></i> Chapter</div><div class="v">{{ quiz.chapter|default:"—" }}</div></div>
+            <div class="info-item"><div class="k"><i class="fas fa-star"></i> Total points</div><div class="v">{{ quiz.total_points|default:0 }} pts</div></div>
+            <div class="info-item"><div class="k"><i class="fas fa-percent"></i> Passing score</div><div class="v">{{ quiz.passing_score|default:70 }}%</div></div>
+            <div class="info-item"><div class="k"><i class="fas fa-redo"></i> Attempt</div><div class="v">1 of {{ quiz.attempts_allowed|default:2 }}</div></div>
           </div>
         </div>
       </div>
 
-      <!-- submit -->
       <div class="side-card">
         <div class="side-body submit-wrap">
           <button class="btn btn-gold" id="submitSideBtn" type="button">
@@ -861,14 +619,11 @@
       </div>
 
     </aside>
-
   </div>
 
-  <!-- ============================================================
-       JAVASCRIPT — Quiz logic
-  ============================================================ -->
+  <!-- ==================== QUIZ LOGIC ==================== -->
   <script>
-    /* ---------- Questions data from Django ---------- */
+    /* Questions data from Django */
     const QUIZ_QUESTIONS = [
       {% for q in quiz.questions.all %}
       {
@@ -889,29 +644,36 @@
       {% endfor %}
     ];
 
-    /* ---------- State ---------- */
     let currentIndex = 0;
     const total = QUIZ_QUESTIONS.length;
-    const userAnswers = {}; // { questionId: answerValue }
+    const userAnswers = {};
 
-    /* ---------- DOM refs ---------- */
-    const qNumDisplay   = document.getElementById('qNumDisplay');
-    const qNumLabel     = document.getElementById('qNumLabel');
-    const qPoints       = document.getElementById('qPoints');
-    const questionText  = document.getElementById('questionText');
-    const answersCont   = document.getElementById('answersContainer');
-    const prevBtn       = document.getElementById('prevBtn');
-    const nextBtn       = document.getElementById('nextBtn');
-    const submitInline  = document.getElementById('submitInlineBtn');
-    const submitSide    = document.getElementById('submitSideBtn');
-    const submitNote    = document.getElementById('submitNote');
-    const qGrid         = document.getElementById('qGrid');
-    const progressText  = document.getElementById('progressText');
-    const progressFill  = document.getElementById('progressFill');
-    const timerChip     = document.getElementById('timerChip');
-    const timerText     = document.getElementById('timerText');
+    const $ = id => document.getElementById(id);
+    const qNumDisplay  = $('qNumDisplay');
+    const qNumLabel    = $('qNumLabel');
+    const qPoints      = $('qPoints');
+    const questionText = $('questionText');
+    const answersCont  = $('answersContainer');
+    const prevBtn      = $('prevBtn');
+    const nextBtn      = $('nextBtn');
+    const submitInline = $('submitInlineBtn');
+    const submitSide   = $('submitSideBtn');
+    const submitNote   = $('submitNote');
+    const qGrid        = $('qGrid');
+    const progressText = $('progressText');
+    const progressFill = $('progressFill');
+    const timerChip    = $('timerChip');
+    const timerText    = $('timerText');
 
-    /* ---------- Build the question map ---------- */
+    /* ---------- Escape HTML ---------- */
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ---------- Build question map ---------- */
     function buildGrid() {
       qGrid.innerHTML = '';
       QUIZ_QUESTIONS.forEach((_, i) => {
@@ -924,10 +686,9 @@
       });
     }
 
-    /* ---------- Update map state ---------- */
+    /* ---------- Update question map ---------- */
     function updateGrid() {
-      const dots = qGrid.querySelectorAll('.q-dot');
-      dots.forEach((dot, i) => {
+      qGrid.querySelectorAll('.q-dot').forEach((dot, i) => {
         dot.classList.remove('answered', 'current');
         const q = QUIZ_QUESTIONS[i];
         if (userAnswers[q.id] !== undefined && userAnswers[q.id] !== '') {
@@ -949,16 +710,15 @@
         : `${remaining} question${remaining !== 1 ? 's' : ''} remaining`;
     }
 
-    /* ---------- Render a question ---------- */
+    /* ---------- Render question ---------- */
     function renderQuestion() {
       const q = QUIZ_QUESTIONS[currentIndex];
       if (!q) return;
 
       qNumDisplay.textContent = currentIndex + 1;
-      qNumLabel.textContent   = `Question ${currentIndex + 1} of ${total}`;
-      qPoints.textContent     = `${q.points} pt${q.points !== 1 ? 's' : ''}`;
+      qNumLabel.textContent = `Question ${currentIndex + 1} of ${total}`;
+      qPoints.textContent = `${q.points} pt${q.points !== 1 ? 's' : ''}`;
       questionText.textContent = q.text;
-
       answersCont.innerHTML = '';
 
       if (q.type === 'mc') {
@@ -966,9 +726,8 @@
         q.answers.forEach((a, i) => {
           const label = document.createElement('label');
           label.className = 'answer';
-          const inputId = `q_${q.id}_a_${a.id}`;
           label.innerHTML = `
-            <input type="radio" name="q_${q.id}" id="${inputId}" value="${a.id}">
+            <input type="radio" name="q_${q.id}" value="${a.id}">
             <span class="letter">${letters[i] || '?'}</span>
             <span class="text">${escapeHtml(a.text)}</span>
           `;
@@ -978,7 +737,7 @@
             label.querySelector('input').checked = true;
           }
 
-          label.addEventListener('click', (e) => {
+          label.addEventListener('click', e => {
             e.preventDefault();
             answersCont.querySelectorAll('.answer').forEach(el => el.classList.remove('selected'));
             label.classList.add('selected');
@@ -991,14 +750,11 @@
           answersCont.appendChild(label);
         });
       } else {
-        // explanation type
         const wrapper = document.createElement('div');
         wrapper.className = 'explain-answer';
         wrapper.innerHTML = `
           <label>Your answer</label>
-          <textarea id="explain_${q.id}"
-                    placeholder="Type your answer here..."
-                    rows="7">${userAnswers[q.id] || ''}</textarea>
+          <textarea id="explain_${q.id}" placeholder="Type your answer here..." rows="7">${userAnswers[q.id] || ''}</textarea>
           <div class="explain-hint">
             <i class="fas fa-circle-info"></i>
             This question will be graded manually by your teacher.
@@ -1006,15 +762,14 @@
         `;
         answersCont.appendChild(wrapper);
 
-        const textarea = wrapper.querySelector('textarea');
-        textarea.addEventListener('input', () => {
-          userAnswers[q.id] = textarea.value;
+        const ta = wrapper.querySelector('textarea');
+        ta.addEventListener('input', () => {
+          userAnswers[q.id] = ta.value;
           updateGrid();
           updateProgress();
         });
       }
 
-      // navigation buttons
       prevBtn.disabled = currentIndex === 0;
       if (currentIndex === total - 1) {
         nextBtn.style.display = 'none';
@@ -1027,24 +782,13 @@
       updateGrid();
     }
 
-    /* ---------- Go to a question ---------- */
+    /* ---------- Go to question ---------- */
     function goTo(i) {
       if (i < 0 || i >= total) return;
       currentIndex = i;
       renderQuestion();
     }
 
-    /* ---------- Escape HTML ---------- */
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    /* ---------- Buttons ---------- */
     prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
     nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
     submitInline.addEventListener('click', submitQuiz);
@@ -1052,44 +796,35 @@
 
     /* ---------- Submit ---------- */
     async function submitQuiz() {
-      // validate
       const unanswered = QUIZ_QUESTIONS.filter(q => {
         const v = userAnswers[q.id];
         return v === undefined || v === '';
       });
 
-      if (unanswered.length > 0) {
-        const ok = confirm(`You have ${unanswered.length} unanswered question(s). Submit anyway?`);
-        if (!ok) return;
-      } else {
-        const ok = confirm('Submit your quiz now? You cannot change your answers after.');
-        if (!ok) return;
-      }
+      const msg = unanswered.length > 0
+        ? `You have ${unanswered.length} unanswered question(s). Submit anyway?`
+        : 'Submit your quiz now? You cannot change your answers after.';
+      if (!confirm(msg)) return;
 
-      if (!window.QUIZ_ID) {
-        alert('Quiz ID not found.');
-        return;
-      }
+      if (!window.QUIZ_ID) { alert('Quiz ID not found.'); return; }
 
-    const payload = {
+      const payload = {
         quiz_id: window.QUIZ_ID,
         answers: QUIZ_QUESTIONS.map(q => {
           const v = userAnswers[q.id];
-          if (q.type === 'mc') {
-            return { question_id: q.id, answer_id: v || null };
-          } else {
-            return { question_id: q.id, text: v || '' };
-          }
+          return q.type === 'mc'
+            ? { question_id: q.id, answer_id: v || null }
+            : { question_id: q.id, text: v || '' };
         })
       };
-      // disable all submit buttons
+
       [submitSide, submitInline].forEach(b => {
         b.disabled = true;
         b.dataset.orig = b.innerHTML;
         b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
       });
 
-      const restoreSubmitButtons = () => {
+      const restore = () => {
         [submitSide, submitInline].forEach(b => {
           b.disabled = false;
           b.innerHTML = b.dataset.orig;
@@ -1108,11 +843,10 @@
         });
 
         let data = null;
-        try {
-          data = await res.json();
-        } catch (parseErr) {
+        try { data = await res.json(); }
+        catch {
           showToast(res.status ? `Submit failed (HTTP ${res.status}). Try again.` : 'Network error. Try again.', 'error');
-          restoreSubmitButtons();
+          restore();
           return;
         }
 
@@ -1120,12 +854,12 @@
           window.location.href = data.redirect_url || `attempt_detail/${data.attempt_id}/`;
         } else {
           showToast(data.message || 'Submit failed', 'error');
-          restoreSubmitButtons();
+          restore();
         }
       } catch (err) {
         console.error(err);
         showToast('Network error. Try again.', 'error');
-        restoreSubmitButtons();
+        restore();
       }
     }
 
@@ -1151,18 +885,19 @@
 
     /* ---------- Timer ---------- */
     let timeLeft = (window.QUIZ_DURATION || 30) * 60;
-    function updateTimer() {
-      const m = Math.floor(timeLeft / 60);
-      const s = timeLeft % 60;
-      timerText.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    let timerInterval = null;
 
-      if (timeLeft <= 300) timerChip.classList.add('danger');
+    function updateTimer() {
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
         alert('Time is up! Your quiz will be submitted automatically.');
         submitQuiz();
         return;
       }
+      const m = Math.floor(timeLeft / 60);
+      const s = timeLeft % 60;
+      timerText.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if (timeLeft <= 300) timerChip.classList.add('danger');
       timeLeft--;
     }
 
@@ -1171,10 +906,9 @@
     renderQuestion();
     updateProgress();
 
-    let timerInterval = null;
     if (total > 0) {
-      timerInterval = setInterval(updateTimer, 1000);
       updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
     }
   </script>
 </body>

@@ -1223,6 +1223,10 @@ body { background: var(--bg-light); }
                     <i class="fa fa-search"></i>
                     <input type="text" id="globalSearch" placeholder="Search users, courses...">
                 </div>
+                <a href="{% url 'admin_analytics' %}" class="topbar-icon-btn" title="Data analysis report" style="width:auto; padding:0 14px; gap:.45rem;">
+                    <i class="fa fa-chart-line"></i>
+                    <span style="font-size:.78rem; font-weight:700;">Analytics</span>
+                </a>
                 <a href="#" class="topbar-icon-btn" id="themeToggle" title="Toggle dark mode">
                     <i class="fa fa-moon" id="themeIcon"></i>
                 </a>

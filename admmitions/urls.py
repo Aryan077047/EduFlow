@@ -45,4 +45,17 @@ urlpatterns = [
     path('quiz/attempt/<int:attempt_id>/grade/', views.grade_attempt, name='grade_attempt'),
     path('grade_attempt/', views.grade_attempt, name='grade_attempt_legacy'),
     path('publish_course/<int:course_id>/', views.publish_course, name='publish_course'),
+
+    # ============ AI STUDY ASSISTANT ============
+    path('ai_assistant/', views.ai_assistant, name='ai_assistant'),
+    path('ai_assistant/ask/', views.ask_ai, name='ask_ai'),
+    path('ai_assistant/clear/', views.clear_ai_chat, name='clear_ai_chat'),
+
+    # ============ ADMIN ANALYTICS ============
+    path('admin_analytics/', views.admin_analytics, name='admin_analytics'),
+    path('admin_analytics/export/', views.admin_analytics_csv, name='admin_analytics_csv'),
+
+    # ============ TEACHER ANALYTICS ============
+    path('teacher_analytics/', views.teacher_analytics, name='teacher_analytics'),
+    path('teacher_analytics/export/', views.teacher_analytics_csv, name='teacher_analytics_csv'),
 ]

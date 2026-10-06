@@ -1,0 +1,560 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics · Online Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+    --primary-dark: #18311f;
+    --text-light: #7d8f82;
+    --bg-light: #f4f7f1;
+    --green-1: #5d9c59;
+    --green-2: #7fbf5b;
+    --green-3: #2f5233;
+    --green-4: #a3e635;
+    --red-1: #dc2626;
+
+    --card: #ffffff;
+    --line: #e5ede2;
+    --line-soft: #eef3ec;
+    --hover: #f7faf6;
+    --radius: 14px;
+
+    --grad-brand: linear-gradient(135deg, #7fbf5b 0%, #5d9c59 55%, #2f5233 100%);
+    --grad-soft:  linear-gradient(135deg, rgba(127,191,91,.14), rgba(93,156,89,.05));
+    --shadow-sm: 0 1px 2px rgba(24,49,31,.04);
+    --shadow:    0 6px 20px rgba(24,49,31,.06);
+}
+[data-theme="dark"] {
+    --primary-dark: #e8f2e6;
+    --text-light: #9db3a1;
+    --bg-light: #0e1712;
+    --green-1: #6fb56a;
+    --green-2: #8ecf6a;
+    --green-3: #4a7a52;
+    --green-4: #b4ef56;
+    --red-1: #ff6b6b;
+
+    --card: #17231a;
+    --line: #24352a;
+    --line-soft: #1c2a20;
+    --hover: #1c2a20;
+
+    --grad-brand: linear-gradient(135deg, #8ecf6a 0%, #6fb56a 55%, #4a7a52 100%);
+    --grad-soft:  linear-gradient(135deg, rgba(127,191,91,.20), rgba(93,156,89,.05));
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow:    0 6px 20px rgba(0,0,0,.35);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    background:
+        radial-gradient(1200px 500px at 100% -10%, rgba(127,191,91,.08), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(93,156,89,.06), transparent 60%),
+        var(--bg-light);
+    color:var(--primary-dark);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:2rem 1.5rem 3rem;
+}
+.page { max-width:1400px; margin:0 auto; }
+
+/* ================= PAGE HEADER ================= */
+.page-head {
+    display:flex; align-items:flex-end; gap:1rem;
+    margin-bottom:1.75rem; flex-wrap:wrap;
+}
+.page-head .titles { flex:1; min-width:220px; }
+.page-head h2 {
+    font-size:1.5rem; font-weight:800; letter-spacing:-.025em;
+    display:flex; align-items:center; gap:.6rem;
+    color:var(--primary-dark);
+}
+.page-head h2 .pill {
+    width:36px; height:36px; border-radius:10px;
+    background:var(--grad-brand); color:#fff;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:.9rem;
+    box-shadow:0 8px 20px rgba(93,156,89,.30);
+}
+.page-head .sub { font-size:.82rem; color:var(--text-light); margin-top:.35rem; }
+
+.btn {
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.65rem 1.1rem; border-radius:10px;
+    font-size:.83rem; font-weight:600; text-decoration:none;
+    border:1px solid var(--line); background:var(--card);
+    color:var(--primary-dark); cursor:pointer;
+    transition:.18s;
+}
+.btn:hover { background:var(--hover); transform:translateY(-1px); }
+.btn-primary {
+    background:var(--grad-brand); color:#fff; border:none;
+    box-shadow:0 8px 20px rgba(93,156,89,.30);
+}
+.btn-primary:hover { box-shadow:0 12px 26px rgba(93,156,89,.42); }
+
+/* ================= KPI CARDS ================= */
+.kpis {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:1rem;
+    margin-bottom:1.75rem;
+}
+.kpi {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:1.1rem 1.2rem;
+    box-shadow:var(--shadow-sm);
+    transition:.22s;
+    position:relative;
+    overflow:hidden;
+}
+.kpi::after {
+    content:''; position:absolute; right:-30px; bottom:-30px;
+    width:90px; height:90px; border-radius:50%;
+    background:var(--grad-soft); opacity:.7;
+    pointer-events:none;
+}
+.kpi:hover {
+    transform:translateY(-3px);
+    box-shadow:var(--shadow);
+    border-color:var(--green-2);
+}
+.kpi .kpi-top {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:.65rem;
+}
+.kpi .kpi-icon {
+    width:34px; height:34px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:9px;
+    background:var(--grad-soft);
+    color:var(--green-3);
+    font-size:.85rem;
+}
+[data-theme="dark"] .kpi .kpi-icon { color:var(--green-4); }
+.kpi .delta {
+    display:inline-flex; align-items:center; gap:.25rem;
+    font-size:.7rem; font-weight:700;
+    padding:.2rem .5rem; border-radius:999px;
+}
+.kpi .delta.up   { color:var(--green-3); background:rgba(127,191,91,.18); }
+.kpi .delta.down { color:var(--red-1);   background:rgba(220,38,38,.10); }
+[data-theme="dark"] .kpi .delta.up { color:var(--green-4); }
+.kpi .num {
+    font-size:1.65rem; font-weight:800; letter-spacing:-.03em;
+    color:var(--primary-dark); line-height:1.05;
+}
+.kpi .lbl {
+    font-size:.72rem; font-weight:600; color:var(--text-light);
+    text-transform:uppercase; letter-spacing:.05em; margin-top:.35rem;
+}
+
+/* ================= CARDS ================= */
+.grid { display:grid; gap:1.1rem; margin-bottom:1.75rem; }
+.grid-2 { grid-template-columns:1fr 1fr; }
+@media (max-width:1000px){ .grid-2 { grid-template-columns:1fr; } }
+
+.card {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;
+    transition:.22s;
+}
+.card:hover { box-shadow:var(--shadow); }
+.card-head {
+    padding:1rem 1.25rem;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:.65rem;
+    font-weight:700; font-size:.92rem;
+    letter-spacing:-.01em;
+}
+.card-head .ic {
+    width:30px; height:30px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:8px;
+    background:var(--grad-soft);
+    color:var(--green-3);
+    font-size:.8rem;
+}
+[data-theme="dark"] .card-head .ic { color:var(--green-4); }
+.card-body { padding:1.25rem; }
+
+/* ================= TABLE ================= */
+table { width:100%; border-collapse:collapse; font-size:.83rem; }
+th {
+    text-align:left; font-size:.68rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em;
+    color:var(--text-light);
+    padding:.75rem 1.25rem;
+    background:transparent;
+    border-bottom:1px solid var(--line);
+}
+td {
+    padding:.8rem 1.25rem;
+    border-bottom:1px solid var(--line-soft);
+    color:var(--primary-dark);
+}
+tr:last-child td { border-bottom:none; }
+table tr:hover td { background:var(--hover); }
+td strong { font-weight:600; }
+
+.badge {
+    display:inline-flex; align-items:center; gap:.35rem;
+    font-size:.7rem; font-weight:600;
+    padding:.25rem .6rem; border-radius:999px;
+    background:rgba(127,191,91,.16); color:var(--green-3);
+}
+.badge::before {
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:currentColor;
+}
+.badge.no { background:rgba(220,38,38,.10); color:var(--red-1); }
+[data-theme="dark"] .badge { background:rgba(127,191,91,.18); color:var(--green-4); }
+[data-theme="dark"] .badge.no { background:rgba(220,38,38,.15); }
+
+.muted { color:var(--text-light); }
+
+/* ================= BARS ================= */
+.bars { display:flex; flex-direction:column; gap:.85rem; }
+.bar-row {
+    display:grid; grid-template-columns:140px 1fr 48px;
+    align-items:center; gap:.8rem; font-size:.8rem;
+}
+.bar-row > span:first-child { color:var(--text-light); font-weight:500; }
+.bar-track {
+    background:var(--line-soft);
+    border-radius:999px; height:8px; overflow:hidden;
+}
+.bar-fill {
+    height:100%; border-radius:999px;
+    background:var(--grad-brand);
+    transition:width .8s ease;
+}
+.bar-num { text-align:right; font-weight:700; }
+
+/* ================= ACTIVITY ================= */
+.activity-chart {
+    display:flex; align-items:flex-end; gap:6px;
+    height:170px; padding:0 .25rem;
+}
+.ac-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.ac-total { font-size:.65rem; font-weight:700; color:var(--text-light); }
+.ac-bars {
+    display:flex; align-items:flex-end; gap:2px;
+    height:120px; width:100%; justify-content:center;
+}
+.ac-bar {
+    width:6px; border-radius:3px 3px 0 0;
+    background:var(--green-2); min-height:3px; max-height:100%;
+    transition:opacity .2s;
+}
+.ac-bar.b2 { background:var(--green-1); }
+.ac-bar.b3 { background:var(--green-3); }
+.ac-bar.b4 { background:var(--green-4); }
+.ac-col:hover .ac-bar { opacity:.65; }
+.ac-day { font-size:.62rem; color:var(--text-light); }
+
+.legend {
+    display:flex; gap:1.1rem; flex-wrap:wrap;
+    font-size:.72rem; color:var(--text-light);
+    margin-top:1rem; padding-top:.85rem;
+    border-top:1px solid var(--line-soft);
+}
+.legend span { display:inline-flex; align-items:center; gap:.4rem; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:3px; }
+
+/* ================= STATS ================= */
+.stat-row {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(90px, 1fr));
+    gap:1rem;
+    padding-bottom:1.1rem; margin-bottom:1.1rem;
+    border-bottom:1px solid var(--line-soft);
+}
+.big-num {
+    font-size:1.7rem; font-weight:800; letter-spacing:-.03em;
+    color:var(--primary-dark); line-height:1;
+}
+.big-num.ok  { color:var(--green-1); }
+.big-num.bad { color:var(--red-1); }
+.pct-ring { font-size:.72rem; color:var(--text-light); margin-top:.4rem; font-weight:500; }
+
+/* ================= FOOTER ================= */
+footer.note {
+    text-align:center; font-size:.75rem; color:var(--text-light);
+    padding:1.75rem 0 .5rem;
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+    <!-- PAGE HEADER -->
+    <div class="page-head">
+        <div class="titles">
+            <h2><span class="pill"><i class="fa fa-chart-line"></i></span> Platform Analytics</h2>
+            <div class="sub">Generated {{ generated_at|date:"M d, Y · H:i" }} · Platform overview</div>
+        </div>
+        <a href="{% url 'admin_analytics_csv' %}" class="btn btn-primary">
+            <i class="fa fa-download"></i> Export CSV
+        </a>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpis">
+        {% with o=overview %}
+        <div class="kpi">
+            <div class="kpi-top">
+                <span class="kpi-icon"><i class="fa fa-users"></i></span>
+                {% if growth.users is not None %}
+                <span class="delta {% if growth.users >= 0 %}up{% else %}down{% endif %}">
+                    <i class="fa fa-arrow-{% if growth.users >= 0 %}up{% else %}down{% endif %}"></i> {{ growth.users|floatformat:1 }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="num">{{ o.users }}</div>
+            <div class="lbl">Total Users</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-user-graduate"></i></span></div>
+            <div class="num">{{ o.students }}</div>
+            <div class="lbl">Students</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-chalkboard-user"></i></span></div>
+            <div class="num">{{ o.teachers }}</div>
+            <div class="lbl">Teachers</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-book"></i></span></div>
+            <div class="num">{{ o.courses }}</div>
+            <div class="lbl">Courses</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-circle-check"></i></span></div>
+            <div class="num">{{ o.published_courses }}</div>
+            <div class="lbl">Published</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top">
+                <span class="kpi-icon"><i class="fa fa-user-plus"></i></span>
+                {% if growth.enrollments is not None %}
+                <span class="delta {% if growth.enrollments >= 0 %}up{% else %}down{% endif %}">
+                    <i class="fa fa-arrow-{% if growth.enrollments >= 0 %}up{% else %}down{% endif %}"></i> {{ growth.enrollments|floatformat:1 }}%
+                </span>
+                {% endif %}
+            </div>
+            <div class="num">{{ o.enrollments }}</div>
+            <div class="lbl">Enrollments</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-clipboard-question"></i></span></div>
+            <div class="num">{{ o.quizzes }}</div>
+            <div class="lbl">Quizzes</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-pen"></i></span></div>
+            <div class="num">{{ o.quiz_attempts }}</div>
+            <div class="lbl">Quiz Attempts</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-top"><span class="kpi-icon"><i class="fa fa-comments"></i></span></div>
+            <div class="num">{{ o.comments }}</div>
+            <div class="lbl">Comments</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- ACTIVITY + OUTCOMES -->
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-head"><span class="ic"><i class="fa fa-chart-column"></i></span> Daily activity — last 14 days</div>
+            <div class="card-body">
+                <div class="activity-chart">
+                    {% for row in daily %}
+                    <div class="ac-col" title="{{ row.date }}: {{ row.users }} users · {{ row.enrollments }} enrollments · {{ row.attempts }} attempts · {{ row.comments }} comments">
+                        <div class="ac-total">{{ row.users|add:row.enrollments|add:row.attempts|add:row.comments }}</div>
+                        <div class="ac-bars">
+                            <div class="ac-bar" style="height:{% widthratio row.users 3 100 %}%"></div>
+                            <div class="ac-bar b2" style="height:{% widthratio row.enrollments 3 100 %}%"></div>
+                            <div class="ac-bar b3" style="height:{% widthratio row.attempts 3 100 %}%"></div>
+                            <div class="ac-bar b4" style="height:{% widthratio row.comments 3 100 %}%"></div>
+                        </div>
+                        <div class="ac-day">{{ row.date }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="legend">
+                    <span><i class="dot" style="background:#7fbf5b"></i>Users</span>
+                    <span><i class="dot" style="background:#5d9c59"></i>Enrollments</span>
+                    <span><i class="dot" style="background:#2f5233"></i>Attempts</span>
+                    <span><i class="dot" style="background:#a3e635"></i>Comments</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="ic"><i class="fa fa-clipboard-check"></i></span> Learning outcomes</div>
+            <div class="card-body">
+                <div class="stat-row">
+                    <div><div class="big-num">{{ quiz_summary.pass_rate }}%</div><div class="pct-ring">Pass rate</div></div>
+                    <div><div class="big-num">{% if quiz_summary.avg_pct is not None %}{{ quiz_summary.avg_pct }}%{% else %}–{% endif %}</div><div class="pct-ring">Avg score</div></div>
+                    <div><div class="big-num">{{ quiz_summary.submitted }}</div><div class="pct-ring">Submissions</div></div>
+                    <div><div class="big-num ok">{{ quiz_summary.passed }}</div><div class="pct-ring">Passed</div></div>
+                    <div><div class="big-num bad">{{ quiz_summary.failed }}</div><div class="pct-ring">Failed</div></div>
+                </div>
+                <div class="bars">
+                    <div class="bar-row"><span>Pass rate</span>
+                        <div class="bar-track"><div class="bar-fill" style="width:{{ quiz_summary.pass_rate }}%"></div></div>
+                        <span class="bar-num">{{ quiz_summary.pass_rate }}%</span></div>
+                    {% if quiz_summary.avg_pct is not None %}
+                    <div class="bar-row"><span>Average score</span>
+                        <div class="bar-track"><div class="bar-fill" style="width:{{ quiz_summary.avg_pct }}%"></div></div>
+                        <span class="bar-num">{{ quiz_summary.avg_pct }}%</span></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORY + LEVEL -->
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-head"><span class="ic"><i class="fa fa-layer-group"></i></span> Courses by category</div>
+            <div class="card-body">
+                <div class="bars">
+                    {% for row in courses_by_category %}
+                        {% if row.count %}
+                        <div class="bar-row"><span title="{{ row.label }}">{{ row.label|truncatechars:20 }}</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:{% widthratio row.count courses_max 100 %}%"></div></div>
+                            <span class="bar-num">{{ row.count }}</span></div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-head" style="border-top:1px solid var(--line);">
+                <span class="ic"><i class="fa fa-signal"></i></span> Courses by level
+            </div>
+            <div class="card-body">
+                <div class="bars">
+                    {% for row in courses_by_level %}
+                        {% if row.count %}
+                        <div class="bar-row"><span>{{ row.label }}</span>
+                            <div class="bar-track"><div class="bar-fill" style="width:{% widthratio row.count courses_max 100 %}%"></div></div>
+                            <span class="bar-num">{{ row.count }}</span></div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="ic"><i class="fa fa-clock-rotate-left"></i></span> Recent enrollments</div>
+            <table>
+                <tr><th>Student</th><th>Course</th><th>Date</th></tr>
+                {% for e in recent_enrollments %}
+                <tr><td>{{ e.student.email|truncatechars:26 }}</td><td>{{ e.course.title|truncatechars:24 }}</td><td class="muted">{{ e.enrolled_at|date:"M d" }}</td></tr>
+                {% empty %}<tr><td colspan="3" class="muted">No enrollments yet.</td></tr>
+                {% endfor %}
+            </table>
+
+            <div class="card-head" style="border-top:1px solid var(--line);">
+                <span class="ic"><i class="fa fa-comments"></i></span> Recent comments
+            </div>
+            <table>
+                <tr><th>User</th><th>Course</th><th>When</th></tr>
+                {% for c in recent_comments %}
+                <tr><td>{{ c.user.email|truncatechars:26 }}</td><td>{{ c.course.title|truncatechars:24 }}</td><td class="muted">{{ c.created_at|date:"M d" }}</td></tr>
+                {% empty %}<tr><td colspan="3" class="muted">No comments yet.</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <!-- TOP COURSES -->
+    <div class="card" style="margin-bottom:1.75rem;">
+        <div class="card-head"><span class="ic"><i class="fa fa-trophy"></i></span> Top courses by engagement</div>
+        <table>
+            <tr><th>#</th><th>Course</th><th>Teacher</th><th>Status</th><th>Enrollments</th><th>Likes</th><th>Comments</th><th>Videos</th></tr>
+            {% for c in top_courses %}
+            <tr>
+                <td class="muted">{{ forloop.counter }}</td>
+                <td><strong>{{ c.title|truncatechars:34 }}</strong></td>
+                <td>{{ c.teacher.email|truncatechars:24 }}</td>
+                <td><span class="badge {% if not c.is_published %}no{% endif %}">{% if c.is_published %}Published{% else %}Draft{% endif %}</span></td>
+                <td><strong>{{ c.enrollments_count }}</strong></td>
+                <td>{{ c.likes_count }}</td>
+                <td>{{ c.comments_count }}</td>
+                <td>{{ c.videos_count }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="8" class="muted">No courses yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- TEACHERS / STUDENTS -->
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-head"><span class="ic"><i class="fa fa-chalkboard-user"></i></span> Top teachers</div>
+            <table>
+                <tr><th>Teacher</th><th>Courses</th><th>Enroll.</th><th>Likes</th></tr>
+                {% for t in top_teachers %}
+                <tr><td>{{ t.email|truncatechars:26 }}</td><td><strong>{{ t.courses_count }}</strong></td><td>{{ t.enrollments_received }}</td><td>{{ t.likes_received }}</td></tr>
+                {% empty %}<tr><td colspan="4" class="muted">No teachers yet.</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="card">
+            <div class="card-head"><span class="ic"><i class="fa fa-user-graduate"></i></span> Most active students</div>
+            <table>
+                <tr><th>Student</th><th>Enroll.</th><th>Attempts</th><th>Comments</th></tr>
+                {% for s in top_students %}
+                <tr><td>{{ s.email|truncatechars:26 }}</td><td><strong>{{ s.enrollments_count }}</strong></td><td>{{ s.attempts_count }}</td><td>{{ s.comments_count }}</td></tr>
+                {% empty %}<tr><td colspan="4" class="muted">No students yet.</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <!-- QUIZ PERFORMANCE -->
+    <div class="card">
+        <div class="card-head"><span class="ic"><i class="fa fa-list-check"></i></span> Quiz performance</div>
+        <table>
+            <tr><th>Quiz</th><th>Course</th><th>Teacher</th><th>Attempts</th><th>Submitted</th><th>Passed</th><th>Avg %</th></tr>
+            {% for row in quiz_rows %}
+            <tr>
+                <td><strong>{{ row.quiz.title|truncatechars:30 }}</strong></td>
+                <td>{{ row.course.title|truncatechars:22|default:"—" }}</td>
+                <td>{{ row.teacher.email|truncatechars:22|default:"—" }}</td>
+                <td>{{ row.attempts_total }}</td>
+                <td>{{ row.finished }}</td>
+                <td style="color:var(--green-1); font-weight:700;">{{ row.passed }}</td>
+                <td>{% if row.avg_pct is not None %}<strong>{{ row.avg_pct }}%</strong>{% else %}<span class="muted">—</span>{% endif %}</td>
+            </tr>
+            {% empty %}<tr><td colspan="7" class="muted">No quizzes yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <footer class="note">
+        Online Study · Admin Analytics · Generated {{ generated_at|date:"M d, Y · H:i" }}
+    </footer>
+</div>
+
+</body>
+</html>

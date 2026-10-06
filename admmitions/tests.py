@@ -2,13 +2,21 @@ import json
 import shutil
 import tempfile
 
-from django.test import TestCase, override_settings
+from unittest import mock
+from urllib.error import HTTPError
+
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import (
-    User, Course, Enrollment, Quiz, Playlist,
+    User, Course, Enrollment, Quiz, Playlist, PasswordResetOTP, AIChatMessage,
+    Comment, Like, QuizAttempt, Question,
 )
+from .views import _build_analytics, _build_teacher_analytics
 
 
 def make_user(email, password='Passw0rd!123', **extra):
@@ -332,3 +340,424 @@ class AddPlaylistApiTest(TempMediaMixin, AuthedTestCase):
         self.login(self.teacher)
         response = self.client.post(reverse('add_playlist', args=[self.course.id]), {})
         self.assertEqual(response.status_code, 400)
+
+
+class ExplodingEmailBackend:
+    """An SMTP-shaped backend that always fails, for the honest-error-path test."""
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def open(self):
+        return False
+
+    def close(self):
+        pass
+
+    def send_messages(self, messages):
+        raise RuntimeError('SMTP unreachable (test backend)')
+
+
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    EMAIL_CONSOLE_MODE=False,
+)
+class ForgotPasswordOTPFlowTest(AuthedTestCase):
+    """End-to-end coverage of the email-OTP password reset."""
+
+    def request_code(self, email):
+        return self.client.post(reverse('forgot_password'), {
+            'step': 'request', 'email': email,
+        })
+
+    def code_from_outbox(self):
+        # Subject looks like 'Your password reset code: 123456'.
+        return mail.outbox[-1].subject.rsplit(' ', 1)[-1]
+
+    def test_request_sends_real_email(self):
+        response = self.request_code(self.student.email)
+        self.assertContains(response, 'Enter it below')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.student.email])
+        self.assertRegex(self.code_from_outbox(), r'\d{6}')
+
+    def test_unknown_email_is_not_revealed(self):
+        response = self.request_code('nobody@example.com')
+        self.assertContains(response, 'Enter it below')
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertFalse(PasswordResetOTP.objects.exists())
+
+    def test_wrong_code_is_rejected(self):
+        self.request_code(self.student.email)
+        code = self.code_from_outbox()
+        wrong = '000000' if code != '000000' else '111111'
+        response = self.client.post(reverse('forgot_password'), {
+            'step': 'verify', 'code': wrong,
+        })
+        self.assertContains(response, 'not correct')
+        self.assertEqual(PasswordResetOTP.objects.latest('created_at').attempts, 1)
+
+    def test_full_flow_resets_password_and_logs_in(self):
+        self.request_code(self.student.email)
+        self.client.post(reverse('forgot_password'), {
+            'step': 'verify', 'code': self.code_from_outbox(),
+        })
+        response = self.client.post(reverse('forgot_password'), {
+            'step': 'password',
+            'new_password1': 'BrandNew!Pass9',
+            'new_password2': 'BrandNew!Pass9',
+        })
+        self.assertRedirects(response, reverse('index'))
+        self.assertTrue(PasswordResetOTP.objects.latest('created_at').is_used)
+        self.client.logout()
+        self.assertTrue(
+            self.client.login(email=self.student.email, password='BrandNew!Pass9')
+        )
+
+    def test_send_failure_is_reported_and_nothing_is_stored(self):
+        with override_settings(EMAIL_BACKEND='admmitions.tests.ExplodingEmailBackend'):
+            response = self.request_code(self.student.email)
+        self.assertContains(response, 'could not send the email')
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertFalse(PasswordResetOTP.objects.exists())
+        self.assertIsNone(self.client.session.get('otp_reset_email'))
+
+    def test_console_mode_notice_mentions_terminal_only(self):
+        with override_settings(EMAIL_CONSOLE_MODE=True):
+            response = self.request_code(self.student.email)
+        self.assertContains(response, 'Development mode')
+
+    def test_code_is_never_rendered_in_html(self):
+        """The OTP must live only in the email (or the server terminal in
+        console mode) - never in any HTML the browser receives."""
+        self.request_code(self.student.email)
+        code = self.code_from_outbox()
+        for step_payload in (
+            {'step': 'request', 'email': self.student.email},
+            {'step': 'verify', 'code': '000000'},
+        ):
+            response = self.client.post(reverse('forgot_password'), step_payload)
+            self.assertNotContains(response, code, status_code=200)
+            self.assertNotContains(response, 'otp_dev_code')
+            self.assertIsNone(self.client.session.get('otp_dev_code'))
+
+    def test_check_email_command_issues_otp(self):
+        # check_email <email> --otp sends the OTP email, then its own test mail.
+        call_command('check_email', self.student.email, '--otp', verbosity=0)
+        self.assertEqual(len(mail.outbox), 2)
+
+
+@override_settings(
+    DEEPSEEK_API_KEY='test-key',
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    EMAIL_CONSOLE_MODE=False,
+)
+class AIAssistantTest(AuthedTestCase):
+    """The AI study assistant page and the ask/clear endpoints."""
+
+    def ask(self, question='What is a loop?', course_id=None):
+        return self.client.post(
+            reverse('ask_ai'),
+            data=json.dumps({'question': question, 'course_id': course_id}),
+            content_type='application/json',
+        )
+
+    def patched_deepseek(self, reply='A loop repeats instructions.'):
+        return mock.patch(
+            'admmitions.views._call_deepseek', return_value=reply,
+        )
+
+    def test_anonymous_is_redirected_to_login(self):
+        self.client.logout()
+        response = self.client.get(reverse('ai_assistant'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('user_login'), response.url)
+
+    def test_page_shows_history_and_courses(self):
+        AIChatMessage.objects.create(
+            user=self.student, role='user', content='What is recursion?')
+        AIChatMessage.objects.create(
+            user=self.student, role='assistant', content='It calls itself.')
+        course = Course.objects.create(
+            student=self.teacher, title='Python 101', category='python',
+            level='beginner', Course_price=0, description='x', is_published=True,
+        )
+        Enrollment.objects.create(student=self.student, course=course)
+
+        self.login(self.student)
+        response = self.client.get(reverse('ai_assistant'))
+        self.assertContains(response, 'What is recursion?')
+        self.assertContains(response, 'Python 101')
+
+    def test_ask_persists_question_and_reply(self):
+        self.login(self.student)
+        with self.patched_deepseek():
+            response = self.ask()
+        self.assertTrue(response.json()['success'])
+        self.assertEqual(
+            [m.role for m in AIChatMessage.objects.filter(user=self.student)],
+            ['user', 'assistant'],
+        )
+        self.assertEqual(response.json()['reply'], 'A loop repeats instructions.')
+
+    def test_empty_question_is_rejected(self):
+        self.login(self.student)
+        response = self.ask('   ')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(AIChatMessage.objects.exists())
+
+    def test_too_long_question_is_rejected(self):
+        self.login(self.student)
+        response = self.ask('x' * 2001)
+        self.assertEqual(response.status_code, 400)
+
+    def test_course_is_scoped_to_enrollments(self):
+        self.login(self.student)
+        with self.patched_deepseek() as deepseek:
+            self.ask(course_id=999)
+        # The course mention turn must not be injected for a non-existent id.
+        sent = deepseek.call_args[0][0]
+        self.assertEqual(len(sent), 2)  # context + question only
+
+    def test_history_is_replayed_with_a_cap(self):
+        for i in range(15):
+            AIChatMessage.objects.create(
+                user=self.student, role='user', content=f'q{i}')
+            AIChatMessage.objects.create(
+                user=self.student, role='assistant', content=f'a{i}')
+        self.login(self.student)
+        with self.patched_deepseek() as deepseek:
+            self.ask('and now?')
+        sent = deepseek.call_args[0][0]
+        # context + 10 turns*2 + new question
+        self.assertEqual(len(sent), 1 + 20 + 1)
+        self.assertEqual(sent[-1]['content'], 'and now?')
+
+    def test_deepseek_failure_returns_502_and_stores_nothing(self):
+        self.login(self.student)
+        with mock.patch(
+            'admmitions.views._call_deepseek',
+            side_effect=RuntimeError('boom'),
+        ):
+            response = self.ask()
+        self.assertEqual(response.status_code, 502)
+        self.assertFalse(AIChatMessage.objects.exists())
+
+    def test_clear_deletes_only_own_history(self):
+        AIChatMessage.objects.create(
+            user=self.teacher, role='user', content='teacher q')
+        AIChatMessage.objects.create(
+            user=self.student, role='user', content='student q')
+        self.login(self.student)
+        response = self.client.post(reverse('clear_ai_chat'))
+        self.assertTrue(response.json()['success'])
+        self.assertFalse(
+            AIChatMessage.objects.filter(user=self.student).exists())
+        self.assertTrue(
+            AIChatMessage.objects.filter(user=self.teacher).exists())
+
+    def test_deepseek_http_404_maps_to_friendly_502(self):
+        self.login(self.student)
+        with mock.patch(
+            'admmitions.views._call_deepseek',
+            side_effect=HTTPError('url', 404, 'Not Found', hdrs=None, fp=None),
+        ):
+            response = self.ask()
+        self.assertEqual(response.status_code, 502)
+        self.assertIn('unavailable', response.json()['error'])
+
+
+@override_settings(
+    DEEPSEEK_API_KEY='test-key',
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    EMAIL_CONSOLE_MODE=False,
+)
+class AdminAnalyticsTest(AuthedTestCase):
+    """Superuser-only platform data analysis report + CSV export."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.course = Course.objects.create(
+            student=cls.teacher, title='Analytics Course', category='python',
+            level='beginner', Course_price=0, description='x', is_published=True,
+        )
+        Enrollment.objects.create(student=cls.student, course=cls.course)
+        Like.objects.create(user=cls.student, course=cls.course)
+        Comment.objects.create(user=cls.student, course=cls.course, text='nice')
+
+    def test_anonymous_is_redirected(self):
+        response = self.client.get(reverse('admin_analytics'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('user_login'), response.url)
+
+    def test_student_and_teacher_are_blocked(self):
+        self.login(self.student)
+        self.assertEqual(self.client.get(reverse('admin_analytics')).status_code, 302)
+        self.assertEqual(
+            self.client.get(reverse('admin_analytics_csv')).status_code, 403)
+        self.login(self.teacher)
+        self.assertEqual(self.client.get(reverse('admin_analytics')).status_code, 302)
+        self.assertEqual(
+            self.client.get(reverse('admin_analytics_csv')).status_code, 403)
+
+    def test_superuser_sees_report_with_real_numbers(self):
+        self.login(self.superuser)
+        response = self.client.get(reverse('admin_analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Platform Data Analysis', content)
+        self.assertIn('Analytics Course', content)
+        self.assertIn('teacher@example.com', content)   # top teachers table
+        self.assertIn('student@example.com', content)   # active students table
+
+    def test_overview_counts_are_correct(self):
+        report = _build_analytics()
+        self.assertGreaterEqual(report['overview']['courses'], 1)
+        self.assertGreaterEqual(report['overview']['enrollments'], 1)
+        self.assertGreaterEqual(report['overview']['likes'], 1)
+        self.assertGreaterEqual(report['overview']['comments'], 1)
+        self.assertEqual(len(report['daily']), 14)
+        self.assertGreaterEqual(report['courses_max'], 1)
+
+    def test_csv_export_contains_sections(self):
+        self.login(self.superuser)
+        response = self.client.get(reverse('admin_analytics_csv'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertIn('attachment', response['Content-Disposition'])
+        text = response.content.decode()
+        self.assertIn('OVERVIEW', text)
+        self.assertIn('DAILY ACTIVITY', text)
+        self.assertIn('TOP COURSES BY ENGAGEMENT', text)
+        self.assertIn('QUIZ PERFORMANCE', text)
+        self.assertIn('RECENT ENROLLMENTS', text)
+        self.assertIn('Analytics Course', text)
+
+
+@override_settings(
+    DEEPSEEK_API_KEY='test-key',
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    EMAIL_CONSOLE_MODE=False,
+)
+class TeacherAnalyticsTest(AuthedTestCase):
+    """Teacher's own data analysis report: strictly scoped + CSV export."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.teacher2 = make_user('teacher2@example.com', role='teacher')
+        cls.student2 = make_user('student2@example.com', role='student')
+
+        # This teacher's course, with one enrolled student, engagement,
+        # a quiz and one submitted (perfect) attempt.
+        cls.course = Course.objects.create(
+            student=cls.teacher, title='Teacher Analytics Course', category='python',
+            level='beginner', Course_price=0, description='x', is_published=True,
+        )
+        cls.other_course = Course.objects.create(
+            student=cls.teacher2, title='Other Teachers Course', category='python',
+            level='beginner', Course_price=0, description='x', is_published=True,
+        )
+        Enrollment.objects.create(student=cls.student, course=cls.course)
+        Enrollment.objects.create(student=cls.student2, course=cls.other_course)
+        Like.objects.create(user=cls.student, course=cls.course)
+        Comment.objects.create(user=cls.student, course=cls.course, text='nice')
+
+        cls.quiz = Quiz.objects.create(
+            course=cls.course, teacher=cls.teacher, title='Teacher Quiz',
+            is_published=True,
+        )
+        Question.objects.create(quiz=cls.quiz, question_type='mc', text='2+2?', points=2)
+        cls.quiz2 = Quiz.objects.create(
+            course=cls.other_course, teacher=cls.teacher2, title='Other Quiz',
+            is_published=True,
+        )
+        cls.attempt = QuizAttempt.objects.create(
+            quiz=cls.quiz, student=cls.student, score=2, status='submitted',
+            submitted_at=timezone.now(),
+        )
+
+    def test_anonymous_is_redirected(self):
+        response = self.client.get(reverse('teacher_analytics'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('user_login'), response.url)
+
+    def test_student_is_blocked(self):
+        self.login(self.student)
+        self.assertEqual(self.client.get(reverse('teacher_analytics')).status_code, 302)
+        self.assertEqual(
+            self.client.get(reverse('teacher_analytics_csv')).status_code, 403)
+
+    def test_teacher_sees_own_report(self):
+        self.login(self.teacher)
+        response = self.client.get(reverse('teacher_analytics'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('My Data Analysis', content)
+        self.assertIn('Teacher Analytics Course', content)
+        self.assertIn('Teacher Quiz', content)
+        # Other people's data must not leak in.
+        self.assertNotIn('Other Teachers Course', content)
+        self.assertNotIn('Other Quiz', content)
+        self.assertNotIn('teacher2@example.com', content)
+
+    def test_superuser_may_preview(self):
+        self.login(self.superuser)
+        self.assertEqual(self.client.get(reverse('teacher_analytics')).status_code, 200)
+
+    def test_report_is_scoped_to_own_data(self):
+        report = _build_teacher_analytics(self.teacher)
+        self.assertEqual(
+            [c.title for c in report['course_rows']], ['Teacher Analytics Course'])
+        self.assertEqual(report['overview']['courses'], 1)
+        self.assertEqual(report['overview']['enrollments'], 1)
+        self.assertEqual(report['overview']['likes'], 1)
+        self.assertEqual(report['overview']['comments'], 1)
+        self.assertEqual(report['overview']['quizzes'], 1)
+        self.assertEqual(
+            [row['quiz'].title for row in report['quiz_rows']], ['Teacher Quiz'])
+        # The student active in the OTHER teacher's course must not appear.
+        self.assertEqual(
+            [s.email for s in report['top_students']], ['student@example.com'])
+
+    def test_quiz_metrics_are_computed(self):
+        report = _build_teacher_analytics(self.teacher)
+        self.assertEqual(report['overview']['submitted_attempts'], 1)
+        self.assertEqual(report['overview']['pass_rate'], 100.0)
+        self.assertEqual(report['overview']['avg_score'], 100.0)
+        row = report['quiz_rows'][0]
+        self.assertEqual(row['finished'], 1)
+        self.assertEqual(row['passed'], 1)
+        self.assertEqual(row['avg_pct'], 100.0)
+
+    def test_second_teacher_gets_their_own_scope(self):
+        report = _build_teacher_analytics(self.teacher2)
+        self.assertEqual(
+            [c.title for c in report['course_rows']], ['Other Teachers Course'])
+        self.assertEqual(report['overview']['enrollments'], 1)
+        self.assertEqual(report['overview']['quiz_attempts'], 0)
+        self.assertEqual(report['quiz_summary']['submitted'], 0)
+        self.assertEqual(report['quiz_summary']['pass_rate'], 0)
+
+    def test_csv_export_contains_sections(self):
+        self.login(self.teacher)
+        response = self.client.get(reverse('teacher_analytics_csv'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertIn('attachment', response['Content-Disposition'])
+        text = response.content.decode()
+        self.assertIn('Teacher Data Analysis Report', text)
+        self.assertIn('teacher@example.com', text)
+        self.assertIn('OVERVIEW', text)
+        self.assertIn('MY COURSES', text)
+        self.assertIn('QUIZ PERFORMANCE', text)
+        self.assertIn('MOST ACTIVE STUDENTS', text)
+        self.assertIn('RECENT ENROLLMENTS', text)
+        self.assertIn('Teacher Analytics Course', text)
+        self.assertNotIn('Other Teachers Course', text)
+
+    def test_csv_blocked_for_students(self):
+        self.login(self.student)
+        self.assertEqual(
+            self.client.get(reverse('teacher_analytics_csv')).status_code, 403)
