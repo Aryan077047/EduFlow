@@ -1,15 +1,31 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang|default:'en' }}" dir="{{ lang_dir|default:'ltr' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Grade Attempt · {{ quiz.title }}</title>
+
+  <!-- 🌙 Dark mode — set theme BEFORE CSS loads -->
+  <script>
+  (function () {
+      try {
+          var saved = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+      } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+      }
+  })();
+  </script>
+  {% if lang_dir == 'rtl' %}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700;800&display=swap">
+  <style>body, input, button, a, h1, span, strong, label, textarea, p { font-family:'Noto Naskh Arabic','Plus Jakarta Sans',sans-serif; }</style>
+  {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="{% static 'css/common.css' %}" rel="stylesheet" />
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; }
-    body { background:#f4f7f1; color:#18311f; padding:2rem; min-height:100vh; }
     .page { max-width:960px; margin:auto; }
 
     .back-btn {
@@ -142,7 +158,7 @@
 <body>
   <div class="page">
     <a href="{% url 'quiz_submissions' quiz.id %}" class="back-btn">
-      <i class="fas fa-arrow-left"></i> Back to Submissions
+      <i class="fas fa-arrow-left"></i> {{ t.back_to_submissions }}
     </a>
 
     <div class="header-card">
@@ -153,15 +169,15 @@
       <div class="stats">
         <div class="stat">
           <strong>{{ attempt.total_score }} / {{ quiz.total_points }}</strong>
-          <span>Score</span>
+          <span>{{ t.score }}</span>
         </div>
         <div class="stat">
           <strong>{{ attempt.percentage }}%</strong>
-          <span>Percentage</span>
+          <span>{{ t.percentage }}</span>
         </div>
         <div class="stat">
           <strong>{{ attempt.get_status_display }}</strong>
-          <span>Status</span>
+          <span>{{ t.status }}</span>
         </div>
       </div>
     </div>
@@ -175,15 +191,15 @@
           <span class="q-num">Q{{ forloop.counter }} · {{ ans.question.points }} pts</span>
           {% if ans.question.question_type == 'mc' %}
             {% if ans.is_correct %}
-              <span class="badge correct"><i class="fas fa-check"></i> Correct</span>
+              <span class="badge correct"><i class="fas fa-check"></i> {{ t.passed }}</span>
             {% else %}
-              <span class="badge wrong"><i class="fas fa-xmark"></i> Wrong</span>
+              <span class="badge wrong"><i class="fas fa-xmark"></i> {{ t.wrong }}</span>
             {% endif %}
           {% else %}
             {% if ans.graded_at %}
-              <span class="badge correct"><i class="fas fa-check"></i> Graded</span>
+              <span class="badge correct"><i class="fas fa-check"></i> {{ t.graded_label }}</span>
             {% else %}
-              <span class="badge manual"><i class="fas fa-pen"></i> Needs grading</span>
+              <span class="badge manual"><i class="fas fa-pen"></i> {{ t.needs_grading }}</span>
             {% endif %}
           {% endif %}
         </div>
@@ -193,13 +209,13 @@
         {% if ans.question.question_type == 'mc' %}
           <div class="student-answer {% if not ans.selected %}empty{% endif %}">
             {% if ans.selected %}
-              <strong>Student picked:</strong> {{ ans.selected.text }}
+              <strong>{{ t.student_picked }}</strong> {{ ans.selected.text }}
             {% else %}
-              No answer selected.
+              {{ t.no_answer_selected }}
             {% endif %}
           </div>
           <div class="correct-note">
-            <i class="fas fa-key"></i> Correct answer:
+            <i class="fas fa-key"></i> {{ t.correct_answer_label }}
             {% for a in ans.question.answers.all %}
               {% if a.is_correct %}{{ a.text }}{% endif %}
             {% endfor %}
@@ -209,21 +225,21 @@
             {% if ans.text_answer %}
               {{ ans.text_answer|linebreaksbr }}
             {% else %}
-              Student left this blank.
+              {{ t.student_left_blank }}
             {% endif %}
           </div>
 
           <div class="grade-row">
             <div class="field">
-              <label>Points (0 – {{ ans.question.points }})</label>
+              <label>{{ t.points }} (0 – {{ ans.question.points }})</label>
               <input type="number" min="0" max="{{ ans.question.points }}"
                      step="0.5" class="grade-points"
                      value="{{ ans.points_awarded }}">
             </div>
             <div class="field" style="flex:2;">
-              <label>Feedback (optional)</label>
+              <label>{{ t.feedback_optional }}</label>
               <textarea class="grade-feedback" rows="2"
-                        placeholder="Write feedback for the student...">{{ ans.teacher_feedback }}</textarea>
+                        placeholder="{{ t.write_comment }}">{{ ans.teacher_feedback }}</textarea>
             </div>
           </div>
         {% endif %}
@@ -233,11 +249,11 @@
 
     <div class="save-bar">
       <div class="total">
-        <span>Total score</span>
+        <span>{{ t.total_score }}</span>
         {{ attempt.total_score }} / {{ quiz.total_points }}
       </div>
       <button class="btn btn-green" id="saveGradesBtn">
-        <i class="fas fa-floppy-disk"></i> Save Grades
+        <i class="fas fa-floppy-disk"></i> {{ t.save_grades }}
       </button>
     </div>
   </div>

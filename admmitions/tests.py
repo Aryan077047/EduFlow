@@ -14,9 +14,11 @@ from django.utils import timezone
 
 from .models import (
     User, Course, Enrollment, Quiz, Playlist, PasswordResetOTP, AIChatMessage,
+    CourseOrder,
     Comment, Like, QuizAttempt, Question,
 )
 from .views import _build_analytics, _build_teacher_analytics
+from onlinestudy.i18n_local import t as translate, LANGUAGES
 
 
 def make_user(email, password='Passw0rd!123', **extra):
@@ -165,12 +167,24 @@ class EnrollDraftCourseTest(TempMediaMixin, AuthedTestCase):
         )
 
     def test_can_enroll_in_published(self):
+        from unittest import mock
+
         self.login(self.student)
-        response = self.client.post(
-            reverse('enroll_course', args=[self.published.id]),
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
-        )
+        # Simulate the full HesabPay checkout + webhook success flow.
+        with mock.patch('hesabpay.services.checkout.HesabPayClient') as mock_client_cls:
+            mock_client_cls.return_value.create_session.return_value = {
+                'url': 'https://test.hesabpay.com/checkout/fake'
+            }
+            response = self.client.post(
+                reverse('enroll_course', args=[self.published.id]),
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            )
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'checkout')
+        order = CourseOrder.objects.get(student=self.student, course=self.published)
+        from admmitions.payments import simulate_hesabpay_success
+        with self.captureOnCommitCallbacks(execute=True):
+            simulate_hesabpay_success(order)
         self.assertTrue(
             Enrollment.objects.filter(student=self.student, course=self.published).exists()
         )
@@ -606,7 +620,7 @@ class AdminAnalyticsTest(AuthedTestCase):
         response = self.client.get(reverse('admin_analytics'))
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
-        self.assertIn('Platform Data Analysis', content)
+        self.assertIn('Platform Analytics', content)
         self.assertIn('Analytics Course', content)
         self.assertIn('teacher@example.com', content)   # top teachers table
         self.assertIn('student@example.com', content)   # active students table
@@ -761,3 +775,74 @@ class TeacherAnalyticsTest(AuthedTestCase):
         self.login(self.student)
         self.assertEqual(
             self.client.get(reverse('teacher_analytics_csv')).status_code, 403)
+
+
+class LanguageSwitchTest(AuthedTestCase):
+    """English / Persian (Dari) / Pashto switcher on the Settings page."""
+
+    def reset_language(self, user, code='en'):
+        User.objects.filter(pk=user.pk).update(language=code)
+        user.refresh_from_db()
+
+    def test_language_defaults_to_english(self):
+        self.assertEqual(self.student.language, 'en')
+
+    def test_setting_page_shows_all_three_languages(self):
+        self.login(self.student)
+        response = self.client.get(reverse('setting'))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('id="langSelect"', html)
+        self.assertIn('English', html)
+        self.assertIn('\u0641\u0627\u0631\u0633\u06cc', html)   # فارسی
+        self.assertIn('\u067e\u069a\u062a\u0648', html)       # پښتو
+
+    def test_choosing_persian_saves_user_and_renders_rtl(self):
+        self.reset_language(self.student)
+        self.login(self.student)
+        response = self.client.post(reverse('save_language'), {'language': 'fa'})
+        self.assertEqual(response.status_code, 302)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.language, 'fa')
+
+        page = self.client.get(reverse('setting'))
+        html = page.content.decode()
+        self.assertEqual(page.context['lang'], 'fa')
+        self.assertEqual(page.context['lang_dir'], 'rtl')
+        self.assertIn('dir="rtl"', html)
+        self.assertNotIn('dir="ltr"', html)
+        self.assertIn('\u062a\u0646\u0638\u06cc\u0645\u0627\u062a', html)  # تنظیمات
+
+    def test_cookie_seeds_login_page_and_new_login(self):
+        self.reset_language(self.student)
+        # Anonymous visitor with the language cookie (picked before login).
+        self.client.cookies['site_lang'] = 'ps'
+        page = self.client.get(reverse('user_login'))
+        self.assertEqual(page.context['lang'], 'ps')
+        html = page.content.decode()
+        self.assertIn('dir="rtl"', html)
+        self.assertIn('\u0646\u0646\u0648\u062a\u0644', html)  # ننوتل (Sign In)
+
+        # Logging in adopts that choice into the user profile.
+        self.client.post(
+            reverse('user_login'),
+            {'email': 'student@example.com', 'password': 'Passw0rd!123'},
+        )
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.language, 'ps')
+
+    def test_invalid_language_is_rejected(self):
+        self.reset_language(self.student)
+        self.login(self.student)
+        response = self.client.post(reverse('save_language'), {'language': 'xx'})
+        self.assertEqual(response.status_code, 302)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.language, 'en')
+
+    def test_pashto_strings_work_and_fallback_to_english(self):
+        self.assertEqual(translate('fa', 'logout'), '\u062e\u0631\u0648\u062c')
+        self.assertEqual(translate('ps', 'login'), '\u0646\u0646\u0648\u062a\u0644')
+        self.assertEqual(translate('en', 'logout'), 'Logout')
+        # Unknown keys degrade to empty string instead of crashing a page.
+        self.assertEqual(translate('fa', 'made_up_key'), '')
+        self.assertEqual(set(LANGUAGES), {'en', 'fa', 'ps'})

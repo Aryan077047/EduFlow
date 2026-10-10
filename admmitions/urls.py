@@ -15,6 +15,8 @@ urlpatterns = [
     path('user_profile/', views.user_profile, name='user_profile'),
     path('profile_img_view/', views.profile_img_view, name='profile_img_view'),
     path('enroll_course/<int:course_id>/', views.enroll_course, name='enroll_course'),
+    path('payments/success/', views.payment_success, name='payment_success'),
+    path('payments/failure/', views.payment_failure, name='payment_failure'),
     path('add_playlist/<int:course_id>/', views.add_playlist, name='add_playlist'),
     path('get_playlist_videos/<int:course_id>/', views.get_playlist_videos, name='get_playlist_videos'),
     path('course/<int:course_id>/lessons/', views.course_lessons, name='course_lessons'),
@@ -29,6 +31,7 @@ urlpatterns = [
     path('approve-staff/<int:pk>/', views.approve_staff, name='approve_staff'),
     path('reject-staff/<int:pk>/', views.reject_staff, name='reject_staff'),
     path('setting/', views.setting, name='setting'),
+    path('setting/language/', views.save_language, name='save_language'),
 
     # ============ QUIZ ROUTES ============
     path('quiz/', views.quiz, name='quiz'),                              # quiz builder page

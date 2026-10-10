@@ -1,13 +1,32 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang|default:'en' }}" dir="{{ lang_dir|default:'ltr' }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Data Analysis · Online Study</title>
+
+<!-- 🌙 Dark mode — set theme BEFORE CSS loads -->
+<script>
+(function () {
+    try {
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+    } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+})();
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+{% if lang_dir == 'rtl' %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700;800&display=swap">
+<style>body, a, h1, h2, th, td, span, div { font-family:'Noto Naskh Arabic','Plus Jakarta Sans',sans-serif; }</style>
+{% endif %}
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="{% static 'css/common.css' %}" rel="stylesheet" />
 <style>
 :root {
     --primary-dark:#18311f;
@@ -205,24 +224,24 @@ footer.note {
 
     <!-- HEADER -->
     <div class="top">
-        <a class="back-btn" href="{% url 'user_profile' %}"><i class="fa fa-arrow-left"></i> My Profile</a>
+        <a class="back-btn" href="{% url 'user_profile' %}"><i class="fa fa-arrow-left"></i> {{ t.my_profile }}</a>
         <div>
-            <h1><i class="fa fa-chart-line" style="color:var(--green-1)"></i> My Data Analysis</h1>
+            <h1><i class="fa fa-chart-line" style="color:var(--green-1)"></i> {{ t.my_data_analysis }}</h1>
             <div class="sub">Generated {{ generated_at|date:"M d, Y H:i" }} · only your courses, quizzes and students</div>
         </div>
         <div class="spacer"></div>
-        <a href="{% url 'teacher_analytics_csv' %}" class="export-btn"><i class="fa fa-file-csv"></i> Download CSV</a>
+        <a href="{% url 'teacher_analytics_csv' %}" class="export-btn"><i class="fa fa-file-csv"></i> {{ t.download_csv }}</a>
     </div>
 
     <!-- KPI OVERVIEW -->
     <div class="kpis">
         {% with o=overview %}
-        <div class="kpi"><div class="num">{{ o.courses }}</div><div class="lbl">My Courses</div></div>
-        <div class="kpi"><div class="num">{{ o.published_courses }}</div><div class="lbl">Published</div></div>
-        <div class="kpi"><div class="num">{{ o.draft_courses }}</div><div class="lbl">Drafts</div></div>
+        <div class="kpi"><div class="num">{{ o.courses }}</div><div class="lbl">{{ t.my_courses_label }}</div></div>
+        <div class="kpi"><div class="num">{{ o.published_courses }}</div><div class="lbl">{{ t.published_label }}</div></div>
+        <div class="kpi"><div class="num">{{ o.draft_courses }}</div><div class="lbl">{{ t.draft }}</div></div>
         <div class="kpi">
             <div class="num">{{ o.enrollments }}</div>
-            <div class="lbl">Enrollments</div>
+            <div class="lbl">{{ t.enrollments_word }}</div>
             {% if growth.enrollments is not None %}
             <div class="delta {% if growth.enrollments >= 0 %}up{% else %}down{% endif %}">
                 <i class="fa fa-caret-{% if growth.enrollments >= 0 %}up{% else %}down{% endif %}"></i>
@@ -232,22 +251,22 @@ footer.note {
             <div class="delta muted">no change data</div>
             {% endif %}
         </div>
-        <div class="kpi"><div class="num">{{ o.unique_students }}</div><div class="lbl">Students Reached</div></div>
-        <div class="kpi"><div class="num">{{ o.videos }}</div><div class="lbl">Videos</div></div>
-        <div class="kpi"><div class="num">{{ o.lessons }}</div><div class="lbl">Lessons</div></div>
-        <div class="kpi"><div class="num">{{ o.quizzes }}</div><div class="lbl">Quizzes</div></div>
-        <div class="kpi"><div class="num">{{ o.quiz_attempts }}</div><div class="lbl">Quiz Attempts</div></div>
-        <div class="kpi"><div class="num">{{ o.pass_rate }}%</div><div class="lbl">Pass Rate</div></div>
-        <div class="kpi"><div class="num">{% if o.avg_score is not None %}{{ o.avg_score }}%{% else %}–{% endif %}</div><div class="lbl">Avg Score</div></div>
-        <div class="kpi"><div class="num">{{ o.comments }}</div><div class="lbl">Comments</div></div>
-        <div class="kpi"><div class="num">{{ o.likes }}</div><div class="lbl">Likes</div></div>
+        <div class="kpi"><div class="num">{{ o.unique_students }}</div><div class="lbl">{{ t.students_reached }}</div></div>
+        <div class="kpi"><div class="num">{{ o.videos }}</div><div class="lbl">{{ t.videos }}</div></div>
+        <div class="kpi"><div class="num">{{ o.lessons }}</div><div class="lbl">{{ t.lessons_word }}</div></div>
+        <div class="kpi"><div class="num">{{ o.quizzes }}</div><div class="lbl">{{ t.quizzes_word }}</div></div>
+        <div class="kpi"><div class="num">{{ o.quiz_attempts }}</div><div class="lbl">{{ t.quiz_attempts_label }}</div></div>
+        <div class="kpi"><div class="num">{{ o.pass_rate }}%</div><div class="lbl">{{ t.pass_rate }}</div></div>
+        <div class="kpi"><div class="num">{% if o.avg_score is not None %}{{ o.avg_score }}%{% else %}–{% endif %}</div><div class="lbl">{{ t.avg_score }}</div></div>
+        <div class="kpi"><div class="num">{{ o.comments }}</div><div class="lbl">{{ t.comments_word }}</div></div>
+        <div class="kpi"><div class="num">{{ o.likes }}</div><div class="lbl">{{ t.likes_word }}</div></div>
         {% endwith %}
     </div>
 
     <!-- ACTIVITY + OUTCOMES -->
     <div class="grid2">
         <div class="card">
-            <h2><i class="fa fa-chart-column"></i> Daily activity — last 14 days</h2>
+            <h2><i class="fa fa-chart-column"></i> {{ t.daily_activity }}</h2>
             <div class="activity-chart">
                 {% for row in daily %}
                 <div class="ac-col" title="{{ row.date }}: {{ row.enrollments }} enrollments, {{ row.attempts }} attempts, {{ row.comments }} comments">
@@ -269,23 +288,23 @@ footer.note {
         </div>
 
         <div class="card">
-            <h2><i class="fa fa-clipboard-check"></i> Learning outcomes</h2>
+            <h2><i class="fa fa-clipboard-check"></i> {{ t.learning_outcomes }}</h2>
             <div class="stat-row">
-                <div><div class="big-num">{{ quiz_summary.pass_rate }}%</div><div class="pct-ring">overall pass rate</div></div>
-                <div><div class="big-num">{% if quiz_summary.avg_pct is not None %}{{ quiz_summary.avg_pct }}%{% else %}–{% endif %}</div><div class="pct-ring">average score</div></div>
-                <div><div class="big-num">{{ quiz_summary.submitted }}</div><div class="pct-ring">submissions</div></div>
-                <div><div class="big-num ok">{{ quiz_summary.passed }}</div><div class="pct-ring">passed</div></div>
-                <div><div class="big-num bad">{{ quiz_summary.failed }}</div><div class="pct-ring">failed</div></div>
+                <div><div class="big-num">{{ quiz_summary.pass_rate }}%</div><div class="pct-ring">{{ t.pass_rate }}</div></div>
+                <div><div class="big-num">{% if quiz_summary.avg_pct is not None %}{{ quiz_summary.avg_pct }}%{% else %}–{% endif %}</div><div class="pct-ring">{{ t.avg_score }}</div></div>
+                <div><div class="big-num">{{ quiz_summary.submitted }}</div><div class="pct-ring">{{ t.submitted_label }}</div></div>
+                <div><div class="big-num ok">{{ quiz_summary.passed }}</div><div class="pct-ring">{{ t.passed }}</div></div>
+                <div><div class="big-num bad">{{ quiz_summary.failed }}</div><div class="pct-ring">{{ t.failed }}</div></div>
             </div>
             <div class="bars">
                 <div class="bar-row">
-                    <span>Pass rate</span>
+                    <span>{{ t.pass_rate }}</span>
                     <div class="bar-track"><div class="bar-fill" style="width:{{ quiz_summary.pass_rate }}%"></div></div>
                     <span class="bar-num">{{ quiz_summary.pass_rate }}%</span>
                 </div>
                 {% if quiz_summary.avg_pct is not None %}
                 <div class="bar-row">
-                    <span>Avg score</span>
+                    <span>{{ t.avg_score }}</span>
                     <div class="bar-track"><div class="bar-fill" style="width:{{ quiz_summary.avg_pct }}%"></div></div>
                     <span class="bar-num">{{ quiz_summary.avg_pct }}%</span>
                 </div>
@@ -296,14 +315,14 @@ footer.note {
 
     <!-- MY COURSES -->
     <div class="card" style="margin-bottom:1.4rem;">
-        <h2><i class="fa fa-book"></i> My courses</h2>
+        <h2><i class="fa fa-book"></i> {{ t.my_courses_label }}</h2>
         <table>
-            <tr><th>#</th><th>Course</th><th>Status</th><th>Price</th><th>Enrollments</th><th>Likes</th><th>Comments</th><th>Videos</th><th>Lessons</th></tr>
+            <tr><th>#</th><th>{{ t.course }}</th><th>{{ t.status }}</th><th>{{ t.price_label }}</th><th>{{ t.enrollments_word }}</th><th>{{ t.likes_word }}</th><th>{{ t.comments_word }}</th><th>{{ t.videos }}</th><th>{{ t.lessons_word }}</th></tr>
             {% for c in course_rows %}
             <tr>
                 <td class="muted">{{ forloop.counter }}</td>
                 <td><strong>{{ c.title|truncatechars:34 }}</strong></td>
-                <td><span class="badge {% if not c.is_published %}no{% endif %}">{% if c.is_published %}Published{% else %}Draft{% endif %}</span></td>
+                <td><span class="badge {% if not c.is_published %}no{% endif %}">{% if c.is_published %}{{ t.published }}{% else %}{{ t.draft }}{% endif %}</span></td>
                 <td>{{ c.Course_price }}</td>
                 <td><strong>{{ c.enrollments_count }}</strong></td>
                 <td>{{ c.likes_count }}</td>
@@ -311,7 +330,7 @@ footer.note {
                 <td>{{ c.videos_count }}</td>
                 <td>{{ c.lessons_count }}</td>
             </tr>
-            {% empty %}<tr><td colspan="9" class="muted">You haven't created any courses yet.</td></tr>
+            {% empty %}<tr><td colspan="9" class="muted">{{ t.you_havent_created_courses }}</td></tr>
             {% endfor %}
         </table>
     </div>
@@ -319,32 +338,32 @@ footer.note {
     <!-- STUDENTS + RECENT ACTIVITY -->
     <div class="grid2">
         <div class="card">
-            <h2><i class="fa fa-user-graduate"></i> Most active students in my courses</h2>
+            <h2><i class="fa fa-user-graduate"></i> {{ t.most_active_students }}</h2>
             <table>
-                <tr><th>Student</th><th>Enroll.</th><th>Attempts</th><th>Comments</th></tr>
+                <tr><th>{{ t.student }}</th><th>{{ t.enroll_short }}</th><th>{{ t.attempts_word }}</th><th>{{ t.comments_word }}</th></tr>
                 {% for s in top_students %}
                 <tr><td>{{ s.email|truncatechars:26 }}</td><td><strong>{{ s.enrollments_count }}</strong></td><td>{{ s.attempts_count }}</td><td>{{ s.comments_count }}</td></tr>
-                {% empty %}<tr><td colspan="4" class="muted">No students yet.</td></tr>
+                {% empty %}<tr><td colspan="4" class="muted">{{ t.no_students_yet }}</td></tr>
                 {% endfor %}
             </table>
         </div>
 
         <div class="card">
-            <h2><i class="fa fa-clock-rotate-left"></i> Recent enrollments</h2>
+            <h2><i class="fa fa-clock-rotate-left"></i> {{ t.recent_enrollments }}</h2>
             <table>
-                <tr><th>Student</th><th>Course</th><th>Date</th></tr>
+                <tr><th>{{ t.student }}</th><th>{{ t.course }}</th><th>{{ t.date }}</th></tr>
                 {% for e in recent_enrollments %}
                 <tr><td>{{ e.student.email|truncatechars:26 }}</td><td>{{ e.course.title|truncatechars:24 }}</td><td class="muted">{{ e.enrolled_at|date:"M d" }}</td></tr>
-                {% empty %}<tr><td colspan="3" class="muted">No enrollments yet.</td></tr>
+                {% empty %}<tr><td colspan="3" class="muted">{{ t.no_enrollments_yet }}</td></tr>
                 {% endfor %}
             </table>
 
-            <h2 style="margin-top:1.3rem;"><i class="fa fa-comments"></i> Recent comments</h2>
+            <h2 style="margin-top:1.3rem;"><i class="fa fa-comments"></i> {{ t.recent_comments }}</h2>
             <table>
-                <tr><th>User</th><th>Course</th><th>When</th></tr>
+                <tr><th>{{ t.email_label }}</th><th>{{ t.course }}</th><th>{{ t.when }}</th></tr>
                 {% for c in recent_comments %}
                 <tr><td>{{ c.user.email|truncatechars:26 }}</td><td>{{ c.course.title|truncatechars:24 }}</td><td class="muted">{{ c.created_at|date:"M d" }}</td></tr>
-                {% empty %}<tr><td colspan="3" class="muted">No comments yet.</td></tr>
+                {% empty %}<tr><td colspan="3" class="muted">{{ t.no_comments_yet }}</td></tr>
                 {% endfor %}
             </table>
         </div>
@@ -353,25 +372,25 @@ footer.note {
     <!-- ATTEMPTS + QUIZ PERFORMANCE -->
     <div class="grid2">
         <div class="card">
-            <h2><i class="fa fa-hourglass-half"></i> Recent quiz submissions</h2>
+            <h2><i class="fa fa-hourglass-half"></i> {{ t.submissions_title }}</h2>
             <table>
-                <tr><th>Student</th><th>Quiz</th><th>Score</th><th>Result</th></tr>
+                <tr><th>{{ t.student }}</th><th>{{ t.quiz_btn }}</th><th>{{ t.score }}</th><th>{{ t.status }}</th></tr>
                 {% for a in recent_attempts %}
                 <tr>
                     <td>{{ a.student.email|truncatechars:24 }}</td>
                     <td>{{ a.quiz.title|truncatechars:22 }}</td>
                     <td><strong>{{ a.percentage }}%</strong></td>
-                    <td><span class="badge {% if not a.passed %}no{% endif %}">{% if a.passed %}Passed{% else %}Failed{% endif %}</span></td>
+                    <td><span class="badge {% if not a.passed %}no{% endif %}">{% if a.passed %}{{ t.passed }}{% else %}{{ t.failed }}{% endif %}</span></td>
                 </tr>
-                {% empty %}<tr><td colspan="4" class="muted">No submissions yet.</td></tr>
+                {% empty %}<tr><td colspan="4" class="muted">{{ t.no_submissions_yet }}</td></tr>
                 {% endfor %}
             </table>
         </div>
 
         <div class="card">
-            <h2><i class="fa fa-list-check"></i> Quiz performance</h2>
+            <h2><i class="fa fa-list-check"></i> {{ t.quiz_performance }}</h2>
             <table>
-                <tr><th>Quiz</th><th>Course</th><th>Attempts</th><th>Submitted</th><th>Passed</th><th>Avg %</th></tr>
+                <tr><th>{{ t.quiz_btn }}</th><th>{{ t.course }}</th><th>{{ t.attempts_word }}</th><th>{{ t.submitted_label }}</th><th>{{ t.passed }}</th><th>{{ t.avg_word }}</th></tr>
                 {% for row in quiz_rows %}
                 <tr>
                     <td><strong>{{ row.quiz.title|truncatechars:26 }}</strong></td>
@@ -381,7 +400,7 @@ footer.note {
                     <td style="color:var(--green-1); font-weight:700;">{{ row.passed }}</td>
                     <td>{% if row.avg_pct is not None %}<strong>{{ row.avg_pct }}%</strong>{% else %}<span class="muted">–</span>{% endif %}</td>
                 </tr>
-                {% empty %}<tr><td colspan="6" class="muted">No quizzes yet.</td></tr>
+                {% empty %}<tr><td colspan="6" class="muted">{{ t.no_quizzes_yet }}</td></tr>
                 {% endfor %}
             </table>
         </div>

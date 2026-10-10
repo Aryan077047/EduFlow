@@ -1,6 +1,6 @@
 /* ============================================================
-   DARK MODE THEME — GPU-SAFE VERSION
-   Prevents screen blackout by disabling heavy GPU effects
+   DARK MODE THEME — GPU-SAFE VERSION (FIXED FORM BORDERS)
+   Prevents screen blackout + fixes red border issue
    ============================================================ */
 
 /* ---------- DARK MODE VARIABLES ---------- */
@@ -39,13 +39,16 @@
     border-radius: 8px;
 }
 
-/* ---------- FORMS ---------- */
+/* ---------- FORMS (NEUTRAL STATE) ---------- */
 [data-theme="dark"] input,
 [data-theme="dark"] textarea,
 [data-theme="dark"] select {
     background: #1b2620 !important;
     color: #e4ede6 !important;
+    border: 1px solid #2f4638 !important;
     border-color: #2f4638 !important;
+    box-shadow: none !important;
+    outline: none;
 }
 
 [data-theme="dark"] input::placeholder,
@@ -53,12 +56,37 @@
     color: #6d7f72 !important;
 }
 
+/* ---------- FORMS (FOCUS = GREEN, NOT RED) ---------- */
 [data-theme="dark"] input:focus,
 [data-theme="dark"] textarea:focus,
 [data-theme="dark"] select:focus {
     background: #1f2c24 !important;
     border-color: #7fbf5b !important;
-    outline: none;
+    box-shadow: 0 0 0 3px rgba(127, 191, 91, 0.15) !important;
+    outline: none !important;
+}
+
+/* ---------- FORMS (ONLY SHOW RED FOR GENUINELY INVALID) ---------- */
+[data-theme="dark"] input:invalid,
+[data-theme="dark"] textarea:invalid,
+[data-theme="dark"] select:invalid {
+    /* Only apply if the field is truly invalid AND has content or has been touched */
+    border-color: #2f4638 !important;
+    box-shadow: none !important;
+}
+
+/* Real validation errors (Django .errorlist / .is-invalid) */
+[data-theme="dark"] input.is-invalid,
+[data-theme="dark"] textarea.is-invalid,
+[data-theme="dark"] select.is-invalid,
+[data-theme="dark"] input.error,
+[data-theme="dark"] textarea.error,
+[data-theme="dark"] select.error,
+[data-theme="dark"] .form-group.has-error input,
+[data-theme="dark"] .form-group.has-error textarea,
+[data-theme="dark"] .form-group.has-error select {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
 }
 
 /* ---------- TABLES ---------- */
@@ -150,4 +178,11 @@
 [data-theme="dark"] .student-course-item:hover,
 [data-theme="dark"] .course-item:hover {
     transform: none !important;
+}
+
+/* 8. Labels and help text stay readable */
+[data-theme="dark"] label,
+[data-theme="dark"] .form-hint,
+[data-theme="dark"] small {
+    color: #93a397 !important;
 }

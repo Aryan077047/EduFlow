@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
 
-    <title>{% block title %}Dashboard{% endblock %}</title>
+    <title>{% block title %}{{ t.dashboard|default:'Dashboard' }}{% endblock %}</title>
 
     <!-- 🌙 Dark mode — set theme BEFORE CSS loads (prevents flash) -->
     <script>
@@ -25,15 +25,26 @@
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,600,700" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- 🌙 Dark mode theme — MUST come before other CSS -->
-    <link href="{% static 'css/theme.css' %}" rel="stylesheet" />
-
-    <!-- Main CSS -->
-    <link href="{% static 'dist-assets/css/themes/lite-purple.css' %}" rel="stylesheet" />
-    <link href="{% static 'dist-assets/css/plugins/perfect-scrollbar.css' %}" rel="stylesheet" />
-    <link href="{% static 'dist-assets/css/plugins/metisMenu.min.css' %}" rel="stylesheet" />
+    <!-- RTL Font Support -->
+    {% if lang_dir == 'rtl' %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700;800&display=swap">
+    <style>body, input, button, a, h1, h2, h3, span, label, small, strong, th, td, p { font-family:'Noto Naskh Arabic','Plus Jakarta Sans',sans-serif; }</style>
+    {% endif %}
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Common CSS (basic styles for all pages) -->
+    <link href="{% static 'css/common.css' %}" rel="stylesheet" />
+
+    <!-- Component CSS -->
+    <link href="{% static 'css/components/header.css' %}" rel="stylesheet" />
+    <link href="{% static 'css/components/footer.css' %}" rel="stylesheet" />
+
+    <!-- Legacy CSS (keep for compatibility) -->
+    <link href="{% static 'dist-assets/css/themes/lite-purple.css' %}" rel="stylesheet" />
+    <link href="{% static 'dist-assets/css/plugins/perfect-scrollbar.css' %}" rel="stylesheet" />
+    <link href="{% static 'dist-assets/css/plugins/metisMenu.min.css' %}" rel="stylesheet" />
 </head>

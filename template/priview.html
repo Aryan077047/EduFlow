@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang|default:'en' }}" dir="{{ lang_dir|default:'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
@@ -21,6 +21,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="{% static 'css/common.css' %}" rel="stylesheet" />
     <style>
         * {
             margin: 0;
@@ -507,10 +508,10 @@
 <div class="player-container">
     <div class="player-nav">
         <div class="back-btn" id="backToDashboardBtn">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
+            <i class="fas fa-arrow-left"></i> {{ t.back_to_dashboard }}
         </div>
         <div class="course-badge">
-            <i class="fas fa-graduation-cap"></i> Interactive Learning
+            <i class="fas fa-graduation-cap"></i> {{ t.interactive_learning }}
         </div>
     </div>
 
@@ -557,30 +558,30 @@
         </div>
 
         <div class="video-info-section">
-            <h2 class="player-title" id="videoTitle">Loading course...</h2>
+            <h2 class="player-title" id="videoTitle">{{ t.loading_course }}</h2>
             <div class="meta-strip">
-                <div class="meta-item"><i class="fas fa-tag"></i> <span id="videoCategory">Category</span></div>
+                <div class="meta-item"><i class="fas fa-tag"></i> <span id="videoCategory">{{ t.category_label }}</span></div>
                 <div class="meta-item"><i class="fas fa-eye"></i> <span id="viewCount">12.5K views</span></div>
                 <div class="meta-item"><i class="fas fa-clock"></i> <span id="videoDuration">--:--</span></div>
             </div>
             <div class="desc-text" id="videoDescription">
-                Course description will appear here.
+                {{ t.description_placeholder }}
             </div>
             <div class="instructor-card">
                 <img class="instructor-avatar" id="instructorImg" src="https://i.pravatar.cc/100?img=12" alt="Instructor">
                 <div class="instructor-details">
                     <h4 id="instructorName">Sarah Johnson</h4>
-                    <p><i class="fas fa-certificate"></i> Senior Instructor</p>
+                    <p><i class="fas fa-certificate"></i> {{ t.senior_instructor }}</p>
                 </div>
             </div>
             <div class="action-row">
-                <button class="share-btn" id="shareCourseBtn"><i class="fas fa-share-alt"></i> Share Course</button>
+                <button class="share-btn" id="shareCourseBtn"><i class="fas fa-share-alt"></i> {{ t.share_course }}</button>
             </div>
         </div>
     </div>
 </div>
 
-<div id="toastMsg" class="toast-msg">✨ Link copied!</div>
+<div id="toastMsg" class="toast-msg">{{ t.link_copied }}</div>
 
 <script>
     // ========== COMPLETE VIDEO PLAYER WITH FULL CONTROLS ==========

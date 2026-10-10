@@ -43,6 +43,17 @@ class User(AbstractUser):
     )
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES,default='student' )
+
+    # Language chosen on the Settings page (en / fa / ps). Used by the
+    # i18n context processor when rendering menus and buttons.
+    USER_LANGUAGES = (
+        ('en', 'English'),
+        ('fa', 'Persian (Dari)'),
+        ('ps', 'Pashto'),
+    )
+    language = models.CharField(
+        max_length=5, choices=USER_LANGUAGES, default='en',
+    )
     email=models.EmailField(unique=True)
     USERNAME_FIELD='email'
     REQUIRED_FIELDS=[]
@@ -227,6 +238,21 @@ class Enrollment(models.Model):
 
     class Meta:
         unique_together = ('student', 'course')
+
+
+class CourseOrder(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid = models.BooleanField(default=False)
+
+    @property
+    def name(self):
+        return self.course.title
+
+    @property
+    def price(self):
+        return float(self.course.Course_price)
         
         
         

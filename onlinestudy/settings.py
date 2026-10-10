@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'admmitions'
+    'admmitions',
+    'hesabpay',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +74,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'onlinestudy.i18n_local.site_context_processor',
             ],
         },
     },
@@ -127,6 +129,12 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+
+# Site language switcher (English / Persian-Dari / Pashto). Templates get
+# {{ t.key }} strings, {{ lang }} and {{ lang_dir }} from the context
+# processor registered below; the chosen language is stored per user in
+# User.language, with the cookie as fallback for anonymous visitors.
+SITE_LANG_COOKIE = 'site_lang'
 
 TIME_ZONE = 'UTC'
 
@@ -210,3 +218,16 @@ DEEPSEEK_BASE_URL = os.environ.get('DEEPSEEK_BASE_URL', globals().get('DEEPSEEK_
 DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL', globals().get('DEEPSEEK_MODEL', 'deepseek-chat'))
 DEEPSEEK_TIMEOUT = int(os.environ.get('DEEPSEEK_TIMEOUT', '30'))
 AI_HISTORY_TURNS = 10
+
+# ============================================================
+# HESABPAY — Afghanistan online payment gateway
+# ============================================================
+HESABPAY = {
+    "ENVIRONMENT": os.environ.get("HESABPAY_ENVIRONMENT", "sandbox"),
+    "SANDBOX_API_KEY": os.environ.get("HESABPAY_SANDBOX_API_KEY", ""),
+    "PRODUCTION_API_KEY": os.environ.get("HESABPAY_PRODUCTION_API_KEY", ""),
+    "PUBLIC_BASE_URL": os.environ.get("PUBLIC_BASE_URL", "http://localhost:8000"),
+    "SUCCESS_URL": "/payments/success/",
+    "FAILURE_URL": "/payments/failure/",
+    "HANDLERS": ["admmitions.payments"],
+}

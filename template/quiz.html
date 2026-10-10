@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang|default:'en' }}" dir="{{ lang_dir|default:'ltr' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,8 +21,13 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  {% if lang_dir == 'rtl' %}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700;800&display=swap">
+  <style>body, input, button, a, h1, h2, h3, span, label, small, strong, th, td, p, textarea, select { font-family:'Noto Naskh Arabic','Plus Jakarta Sans',sans-serif; }</style>
+  {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="{% static 'css/common.css' %}" rel="stylesheet" />
   <style>
     :root {
       --primary-dark: #18311f;
@@ -966,7 +971,7 @@
         <div>
           <div class="name">{{ request.user.get_full_name|default:request.user.email }}</div>
           <div class="role">
-            {% if request.user.role == 'teacher' %}Teacher{% else %}Student{% endif %}
+            {% if request.user.role == 'teacher' %}{{ t.teacher }}{% else %}{{ t.student }}{% endif %}
           </div>
         </div>
       </div>
@@ -979,74 +984,74 @@
 
       <div class="page-head">
         <div>
-          <h1><i class="fas fa-circle-plus"></i> Create a New Quiz</h1>
-          <p>Build your quiz by adding details and questions below.</p>
+          <h1><i class="fas fa-circle-plus"></i> {{ t.create_quiz_title }}</h1>
+          <p>{{ t.build_quiz_subtitle }}</p>
         </div>
-        <div class="draft-chip"><i class="fas fa-circle-dot"></i> Draft — not published</div>
+        <div class="draft-chip"><i class="fas fa-circle-dot"></i> {{ t.draft_not_published }}</div>
       </div>
 
       <section class="card">
         <div class="card-head">
           <div class="ch-ico"><i class="fas fa-circle-info"></i></div>
           <div>
-            <h3>Quiz Details</h3>
-            <p>Set the title, subject, and rules for this quiz</p>
+            <h3>{{ t.quiz_details }}</h3>
+            <p>{{ t.set_quiz_rules }}</p>
           </div>
         </div>
         <div class="card-body">
           <div class="field">
-            <label>Quiz title</label>
+            <label>{{ t.quiz_title_label }}</label>
             <input type="text" id="quizTitle" placeholder="e.g. Cell Structure &amp; Function Quiz"
                    value="{{ quiz.title|default:'' }}">
           </div>
 
           <div class="field">
-            <label>Description</label>
+            <label>{{ t.description }}</label>
             <textarea id="quizDescription" placeholder="Give your students a short overview...">{{ quiz.description|default:'' }}</textarea>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Subject</label>
+              <label>{{ t.subject }}</label>
               <select id="quizSubject">
-                <option value="Biology" {% if quiz.subject == 'Biology' %}selected{% endif %}>Biology</option>
-                <option value="Chemistry" {% if quiz.subject == 'Chemistry' %}selected{% endif %}>Chemistry</option>
-                <option value="Physics" {% if quiz.subject == 'Physics' %}selected{% endif %}>Physics</option>
-                <option value="Mathematics" {% if quiz.subject == 'Mathematics' %}selected{% endif %}>Mathematics</option>
-                <option value="History" {% if quiz.subject == 'History' %}selected{% endif %}>History</option>
+                <option value="Biology" {% if quiz.subject == 'Biology' %}selected{% endif %}>{{ t.biology }}</option>
+                <option value="Chemistry" {% if quiz.subject == 'Chemistry' %}selected{% endif %}>{{ t.chemistry }}</option>
+                <option value="Physics" {% if quiz.subject == 'Physics' %}selected{% endif %}>{{ t.physics }}</option>
+                <option value="Mathematics" {% if quiz.subject == 'Mathematics' %}selected{% endif %}>{{ t.mathematics }}</option>
+                <option value="History" {% if quiz.subject == 'History' %}selected{% endif %}>{{ t.history_subject }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Chapter / Unit</label>
+              <label>{{ t.chapter_unit }}</label>
               <input type="text" id="quizChapter" placeholder="e.g. Chapter 4"
                      value="{{ quiz.chapter|default:'' }}">
             </div>
             <div class="field">
-              <label>Difficulty</label>
+              <label>{{ t.difficulty }}</label>
               <select id="quizDifficulty">
-                <option value="easy" {% if quiz.difficulty == 'easy' %}selected{% endif %}>Easy</option>
-                <option value="medium" {% if quiz.difficulty == 'medium' or not quiz %}selected{% endif %}>Medium</option>
-                <option value="hard" {% if quiz.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+                <option value="easy" {% if quiz.difficulty == 'easy' %}selected{% endif %}>{{ t.easy }}</option>
+                <option value="medium" {% if quiz.difficulty == 'medium' or not quiz %}selected{% endif %}>{{ t.medium }}</option>
+                <option value="hard" {% if quiz.difficulty == 'hard' %}selected{% endif %}>{{ t.hard }}</option>
               </select>
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Duration (minutes)</label>
+              <label>{{ t.duration_minutes }}</label>
               <input type="number" id="quizDuration" value="{{ quiz.duration|default:30 }}" min="1">
             </div>
             <div class="field">
-              <label>Passing score (%)</label>
+              <label>{{ t.passing_score }}</label>
               <input type="number" id="quizPassing" value="{{ quiz.passing_score|default:70 }}" min="0" max="100">
             </div>
             <div class="field">
-              <label>Attempts allowed</label>
+              <label>{{ t.attempts_allowed }}</label>
               <select id="quizAttempts">
                 <option value="1" {% if quiz.attempts_allowed == '1' %}selected{% endif %}>1</option>
                 <option value="2" {% if quiz.attempts_allowed == '2' or not quiz %}selected{% endif %}>2</option>
                 <option value="3" {% if quiz.attempts_allowed == '3' %}selected{% endif %}>3</option>
-                <option value="Unlimited" {% if quiz.attempts_allowed == 'Unlimited' %}selected{% endif %}>Unlimited</option>
+                <option value="Unlimited" {% if quiz.attempts_allowed == 'Unlimited' %}selected{% endif %}>{{ t.unlimited }}</option>
               </select>
             </div>
           </div>
@@ -1062,7 +1067,7 @@
                 <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
                 <div class="q-index">{{ forloop.counter }}</div>
                 <div class="q-title">Question {{ forloop.counter }}</div>
-                <span class="q-type-badge mc"><i class="fas fa-list-ul"></i> Multiple choice</span>
+                <span class="q-type-badge mc"><i class="fas fa-list-ul"></i> {{ t.multiple_choice }}</span>
                 <div class="q-tools">
                   <button class="btn-icon" title="Duplicate" data-action="duplicate" type="button"><i class="fas fa-copy"></i></button>
                   <button class="btn-icon danger" title="Delete" data-action="delete" type="button"><i class="fas fa-trash-alt"></i></button>
@@ -1070,13 +1075,13 @@
               </div>
               <div class="q-block-body">
                 <div class="field">
-                  <label>Question text</label>
+                  <label>{{ t.question_text }}</label>
                   <textarea placeholder="Type your question here...">{{ q.text }}</textarea>
                 </div>
 
                 <div class="answers-label">
-                  <span class="al-title">Answer options</span>
-                  <span class="al-hint">Select the correct answer</span>
+                  <span class="al-title">{{ t.answer_options }}</span>
+                  <span class="al-hint">{{ t.select_correct_answer }}</span>
                 </div>
 
                 <div class="answer-list">
@@ -1092,12 +1097,12 @@
                   {% endfor %}
                 </div>
 
-                <button class="add-answer" type="button"><i class="fas fa-plus"></i> Add answer option</button>
+                <button class="add-answer" type="button"><i class="fas fa-plus"></i> {{ t.add_answer_option }}</button>
               </div>
               <div class="q-block-foot">
                 <div class="q-meta">
                   <span><i class="fas fa-star"></i> {{ q.points }} points</span>
-                  <span><i class="fas fa-check-circle"></i> Single choice</span>
+                  <span><i class="fas fa-check-circle"></i> {{ t.single_choice }}</span>
                 </div>
               </div>
             </section>
@@ -1107,7 +1112,7 @@
                 <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
                 <div class="q-index">{{ forloop.counter }}</div>
                 <div class="q-title">Question {{ forloop.counter }}</div>
-                <span class="q-type-badge explain"><i class="fas fa-pen"></i> Explanation</span>
+                <span class="q-type-badge explain"><i class="fas fa-pen"></i> {{ t.explanation }}</span>
                 <div class="q-tools">
                   <button class="btn-icon" title="Duplicate" data-action="duplicate" type="button"><i class="fas fa-copy"></i></button>
                   <button class="btn-icon danger" title="Delete" data-action="delete" type="button"><i class="fas fa-trash-alt"></i></button>
@@ -1115,26 +1120,26 @@
               </div>
               <div class="q-block-body">
                 <div class="field">
-                  <label>Question text</label>
+                  <label>{{ t.question_text }}</label>
                   <textarea placeholder="Type your question here...">{{ q.text }}</textarea>
                 </div>
 
                 <div class="explain-box">
-                  <div class="eb-head"><i class="fas fa-pen-fancy"></i> Student will write a free-text answer</div>
+                  <div class="eb-head"><i class="fas fa-pen-fancy"></i> {{ t.free_text_answer }}</div>
                   <div class="explain-preview">
                     <i class="fas fa-keyboard"></i>
-                    <span>Students type their response in a text area. You grade it later.</span>
+                    <span>{{ t.students_type_response }}</span>
                   </div>
                   <div class="explain-info">
                     <i class="fas fa-circle-info"></i>
-                    <span>Use this type for open-ended questions, essays, or short answers that can't be auto-graded.</span>
+                    <span>{{ t.use_open_questions }}</span>
                   </div>
                 </div>
               </div>
               <div class="q-block-foot">
                 <div class="q-meta">
                   <span><i class="fas fa-star"></i> {{ q.points }} points</span>
-                  <span><i class="fas fa-pen"></i> Manual grading</span>
+                  <span><i class="fas fa-pen"></i> {{ t.manual_grading }}</span>
                 </div>
               </div>
             </section>
@@ -1143,31 +1148,31 @@
         {% else %}
           <div class="empty-questions" id="emptyState">
             <i class="fas fa-clipboard-list"></i>
-            <h3>No questions yet</h3>
-            <p>Click "Add a new question" below to get started.</p>
+            <h3>{{ t.no_questions_yet }}</h3>
+            <p>{{ t.click_add_question }}</p>
           </div>
         {% endif %}
 
         <div class="add-wrap">
           <button class="add-question" id="addQuestionBtn" type="button">
-            <i class="fas fa-plus plus"></i> Add a new question
+            <i class="fas fa-plus plus"></i> {{ t.add_new_question }}
           </button>
 
           <div class="type-picker" id="typePicker">
-            <div class="tp-head"><i class="fas fa-shapes"></i> Choose question type</div>
+            <div class="tp-head"><i class="fas fa-shapes"></i> {{ t.choose_question_type }}</div>
             <div class="type-options">
               <button class="type-opt mc" data-type="mc" type="button">
                 <div class="to-ico"><i class="fas fa-list-ul"></i></div>
                 <div class="to-txt">
-                  <strong>Multiple Choice</strong>
-                  <small>4 answer options with one correct answer.</small>
+                  <strong>{{ t.multiple_choice_cap }}</strong>
+                  <small>{{ t.four_options_hint }}</small>
                 </div>
               </button>
               <button class="type-opt explain" data-type="explain" type="button">
                 <div class="to-ico"><i class="fas fa-pen"></i></div>
                 <div class="to-txt">
-                  <strong>Explanation</strong>
-                  <small>Open-ended text answer, graded manually.</small>
+                  <strong>{{ t.explanation }}</strong>
+                  <small>{{ t.open_ended_hint }}</small>
                 </div>
               </button>
             </div>
@@ -1181,30 +1186,30 @@
     <aside class="side-col">
 
       <div class="side-card">
-        <div class="side-head"><i class="fas fa-chart-simple"></i> Quiz Summary</div>
+        <div class="side-head"><i class="fas fa-chart-simple"></i> {{ t.quiz_summary }}</div>
         <div class="side-body">
           <div class="sum-grid">
             <div class="sum-box">
               <div class="v" id="sumQuestions">{% if quiz %}{{ quiz.questions.count }}{% else %}0{% endif %}</div>
-              <div class="k">Questions</div>
+              <div class="k">{{ t.questions_word }}</div>
             </div>
             <div class="sum-box">
               <div class="v" id="sumPoints">{% if quiz %}{{ quiz.total_points }}{% else %}0{% endif %}</div>
-              <div class="k">Total points</div>
+              <div class="k">{{ t.total_points }}</div>
             </div>
           </div>
 
           <div>
             <div style="font-size:.68rem; font-weight:800; color:var(--green-3); letter-spacing:.6px; text-transform:uppercase; margin-bottom:.4rem;">
-              Question types
+              {{ t.question_types }}
             </div>
             <div class="type-breakdown">
               <div class="type-line">
-                <div class="tl-left"><span class="tl-dot mc"></span> Multiple choice</div>
+                <div class="tl-left"><span class="tl-dot mc"></span> {{ t.multiple_choice }}</div>
                 <span class="tl-count" id="countMC">0</span>
               </div>
               <div class="type-line">
-                <div class="tl-left"><span class="tl-dot explain"></span> Explanation</div>
+                <div class="tl-left"><span class="tl-dot explain"></span> {{ t.explanation }}</div>
                 <span class="tl-count" id="countExplain">0</span>
               </div>
             </div>
@@ -1213,22 +1218,22 @@
       </div>
 
       <div class="side-card">
-        <div class="side-head"><i class="fas fa-gear"></i> Settings</div>
+        <div class="side-head"><i class="fas fa-gear"></i> {{ t.settings }}</div>
         <div class="side-body">
           <div class="opt-row">
-            <div class="ot"><strong>Shuffle questions</strong><small>Randomize order</small></div>
+            <div class="ot"><strong>{{ t.shuffle_questions }}</strong><small>{{ t.randomize_order }}</small></div>
             <label class="sw"><input type="checkbox"><span class="tr"></span></label>
           </div>
           <div class="opt-row">
-            <div class="ot"><strong>Shuffle answers</strong><small>Randomize options</small></div>
+            <div class="ot"><strong>{{ t.shuffle_answers }}</strong><small>{{ t.randomize_options }}</small></div>
             <label class="sw"><input type="checkbox" checked><span class="tr"></span></label>
           </div>
           <div class="opt-row">
-            <div class="ot"><strong>Show answers</strong><small>Reveal after submit</small></div>
+            <div class="ot"><strong>{{ t.show_answers }}</strong><small>{{ t.reveal_after_submit }}</small></div>
             <label class="sw"><input type="checkbox" checked><span class="tr"></span></label>
           </div>
           <div class="opt-row">
-            <div class="ot"><strong>Time limit</strong><small>Enforce duration</small></div>
+            <div class="ot"><strong>{{ t.time_limit }}</strong><small>{{ t.enforce_duration }}</small></div>
             <label class="sw"><input type="checkbox" checked><span class="tr"></span></label>
           </div>
         </div>
@@ -1238,11 +1243,11 @@
         <div class="side-body">
           <div class="side-actions">
             <button class="btn btn-green" id="saveQuizBtn2" type="button">
-              <i class="fas fa-floppy-disk"></i> Save Quiz
+              <i class="fas fa-floppy-disk"></i> {{ t.save_quiz }}
             </button>
-            <button class="btn btn-line" type="button"><i class="fas fa-eye"></i> Preview Quiz</button>
+            <button class="btn btn-line" type="button"><i class="fas fa-eye"></i> {{ t.preview_quiz }}</button>
                 <button class="btn btn-line" type="button" id="publishQuizBtn">
-                <i class="fas fa-circle-check"></i> Publish
+                <i class="fas fa-circle-check"></i> {{ t.publish }}
               </button>          </div>
         </div>
       </div>
@@ -1328,7 +1333,7 @@
           <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
           <div class="q-index">${qNum}</div>
           <div class="q-title">Question ${qNum}</div>
-          <span class="q-type-badge mc"><i class="fas fa-list-ul"></i> Multiple choice</span>
+          <span class="q-type-badge mc"><i class="fas fa-list-ul"></i> {{ t.multiple_choice }}</span>
           <div class="q-tools">
             <button class="btn-icon" title="Duplicate" data-action="duplicate" type="button"><i class="fas fa-copy"></i></button>
             <button class="btn-icon danger" title="Delete" data-action="delete" type="button"><i class="fas fa-trash-alt"></i></button>
@@ -1336,12 +1341,12 @@
         </div>
         <div class="q-block-body">
           <div class="field">
-            <label>Question text</label>
+            <label>{{ t.question_text }}</label>
             <textarea placeholder="Type your question here..."></textarea>
           </div>
           <div class="answers-label">
-            <span class="al-title">Answer options</span>
-            <span class="al-hint">Select the correct answer</span>
+            <span class="al-title">{{ t.answer_options }}</span>
+            <span class="al-hint">{{ t.select_correct_answer }}</span>
           </div>
           <div class="answer-list">
             ${answerRow(qNum, 'A', false)}
@@ -1349,12 +1354,12 @@
             ${answerRow(qNum, 'C', false)}
             ${answerRow(qNum, 'D', false)}
           </div>
-          <button class="add-answer" type="button"><i class="fas fa-plus"></i> Add answer option</button>
+          <button class="add-answer" type="button"><i class="fas fa-plus"></i> {{ t.add_answer_option }}</button>
         </div>
         <div class="q-block-foot">
           <div class="q-meta">
             <span><i class="fas fa-star"></i> 2 points</span>
-            <span><i class="fas fa-check-circle"></i> Single choice</span>
+            <span><i class="fas fa-check-circle"></i> {{ t.single_choice }}</span>
           </div>
         </div>
       `;
@@ -1372,7 +1377,7 @@
           <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
           <div class="q-index">${qNum}</div>
           <div class="q-title">Question ${qNum}</div>
-          <span class="q-type-badge explain"><i class="fas fa-pen"></i> Explanation</span>
+          <span class="q-type-badge explain"><i class="fas fa-pen"></i> {{ t.explanation }}</span>
           <div class="q-tools">
             <button class="btn-icon" title="Duplicate" data-action="duplicate" type="button"><i class="fas fa-copy"></i></button>
             <button class="btn-icon danger" title="Delete" data-action="delete" type="button"><i class="fas fa-trash-alt"></i></button>
@@ -1380,25 +1385,25 @@
         </div>
         <div class="q-block-body">
           <div class="field">
-            <label>Question text</label>
+            <label>{{ t.question_text }}</label>
             <textarea placeholder="Type your question here..."></textarea>
           </div>
           <div class="explain-box">
-            <div class="eb-head"><i class="fas fa-pen-fancy"></i> Student will write a free-text answer</div>
+            <div class="eb-head"><i class="fas fa-pen-fancy"></i> {{ t.free_text_answer }}</div>
             <div class="explain-preview">
               <i class="fas fa-keyboard"></i>
-              <span>Students type their response in a text area. You grade it later.</span>
+              <span>{{ t.students_type_response }}</span>
             </div>
             <div class="explain-info">
               <i class="fas fa-circle-info"></i>
-              <span>Use this type for open-ended questions, essays, or short answers that can't be auto-graded.</span>
+              <span>{{ t.use_open_questions }}</span>
             </div>
           </div>
         </div>
         <div class="q-block-foot">
           <div class="q-meta">
             <span><i class="fas fa-star"></i> 5 points</span>
-            <span><i class="fas fa-pen"></i> Manual grading</span>
+            <span><i class="fas fa-pen"></i> {{ t.manual_grading }}</span>
           </div>
         </div>
       `;

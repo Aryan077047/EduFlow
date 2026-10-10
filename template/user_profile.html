@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang|default:'en' }}" dir="{{ lang_dir|default:'ltr' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +18,13 @@
   })();
   </script>
 
+  {% if lang_dir == 'rtl' %}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700;800&display=swap">
+  <style>body, input, button, a, h1, h2, h3, h4, span, label, small, strong, th, td, p { font-family:'Noto Naskh Arabic','Plus Jakarta Sans',sans-serif; }</style>
+  {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link href="{% static 'css/common.css' %}" rel="stylesheet" />
   <style>
     /* ================= THEME TOKENS ================= */
     :root {
@@ -656,27 +661,27 @@
 
   <div class="header">
     <div class="header-left">
-      <a href="{% url 'index' %}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+      <a href="{% url 'index' %}" class="back-btn"><i class="fas fa-arrow-left"></i> {{ t.back_to_dashboard }}</a>
       <div>
-        <h1>{% if is_teacher %}Course Portfolio{% else %}My Learning{% endif %}</h1>
-        <p>{% if is_teacher %}Professional instructor dashboard{% else %}Courses you are enrolled in{% endif %}</p>
+        <h1>{% if is_teacher %}{{ t.course_portfolio }}{% else %}{{ t.my_learning }}{% endif %}</h1>
+        <p>{% if is_teacher %}{{ t.professional_instructor_dashboard }}{% else %}{{ t.courses_you_enrolled }}{% endif %}</p>
       </div>
     </div>
     <div class="header-actions">
       {% if info.role == 'student' %}
         {% if teacher_application.status == 'pending' %}
-          <span class="status-pill pending"><i class="fa-solid fa-clock"></i> Teacher application pending</span>
+          <span class="status-pill pending"><i class="fa-solid fa-clock"></i> {{ t.teacher_application_pending }}</span>
         {% elif teacher_application.status == 'approved' %}
-          <span class="status-pill"><i class="fa-solid fa-circle-check"></i> Approved teacher</span>
+          <span class="status-pill"><i class="fa-solid fa-circle-check"></i> {{ t.approved_teacher }}</span>
         {% elif teacher_application.status == 'rejected' %}
-          <button type="button" class="btn btn-outline" id="applyTeacherBtn"><i class="fa-solid fa-chalkboard-user"></i> Re-apply as Teacher</button>
+          <button type="button" class="btn btn-outline" id="applyTeacherBtn"><i class="fa-solid fa-chalkboard-user"></i> {{ t.reapply_teacher }}</button>
         {% else %}
-          <button type="button" class="btn btn-outline" id="applyTeacherBtn"><i class="fa-solid fa-chalkboard-user"></i> Apply as Teacher</button>
+          <button type="button" class="btn btn-outline" id="applyTeacherBtn"><i class="fa-solid fa-chalkboard-user"></i> {{ t.apply_teacher }}</button>
         {% endif %}
       {% endif %}
       {% if is_teacher %}
-        <a class="btn btn-outline" href="{% url 'teacher_analytics' %}"><i class="fa-solid fa-chart-line"></i> Analytics</a>
-        <button type="button" class="btn btn-primary" id="openModal"><i class="fa-solid fa-plus"></i> Create Course</button>
+        <a class="btn btn-outline" href="{% url 'teacher_analytics' %}"><i class="fa-solid fa-chart-line"></i> {{ t.analytics }}</a>
+        <button type="button" class="btn btn-primary" id="openModal"><i class="fa-solid fa-plus"></i> {{ t.create_course }}</button>
       {% endif %}
     </div>
   </div>
@@ -697,7 +702,7 @@
         </form>
         <div class="profile-info">
           <div class="display-name">{% if info.first_name or info.last_name %}{{ info.first_name }} {{ info.last_name }}{% else %}{{ info.email }}{% endif %}</div>
-          <div class="badge"><i class="fa-solid fa-leaf"></i> {% if is_teacher %}Teacher{% else %}Student{% endif %}</div>
+          <div class="badge"><i class="fa-solid fa-leaf"></i> {% if is_teacher %}{{ t.teacher }}{% else %}{{ t.student }}{% endif %}</div>
         </div>
       </div>
     </div>
@@ -708,45 +713,45 @@
     <div class="side-col">
 
       <div class="card">
-        <div class="card-title"><i class="fa-solid fa-address-card"></i> Personal Info</div>
+        <div class="card-title"><i class="fa-solid fa-address-card"></i> {{ t.personal_info }}</div>
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-user"></i></div>
-          <div><div class="info-label">Full name</div><div class="info-value">{{ info.get_full_name|default:info.email }}</div></div>
+          <div><div class="info-label">{{ t.full_name }}</div><div class="info-value">{{ info.get_full_name|default:info.email }}</div></div>
         </div>
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-envelope"></i></div>
-          <div><div class="info-label">Email</div><div class="info-value">{{ info.email }}</div></div>
+          <div><div class="info-label">{{ t.email_label }}</div><div class="info-value">{{ info.email }}</div></div>
         </div>
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-user-tag"></i></div>
-          <div><div class="info-label">Role</div><div class="info-value">{% if is_teacher %}<span style="color:var(--secondary);">Teacher</span>{% else %}<span style="color:var(--info);">Student</span>{% endif %}</div></div>
+          <div><div class="info-label">{{ t.role }}</div><div class="info-value">{% if is_teacher %}<span style="color:var(--secondary);">{{ t.teacher }}</span>{% else %}<span style="color:var(--info);">{{ t.student }}</span>{% endif %}</div></div>
         </div>
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-calendar"></i></div>
-          <div><div class="info-label">Member since</div><div class="info-value">{{ info.date_joined|date:"M d, Y" }}</div></div>
+          <div><div class="info-label">{{ t.member_since }}</div><div class="info-value">{{ info.date_joined|date:"M d, Y" }}</div></div>
         </div>
         {% if is_teacher and teacher_application %}
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-          <div><div class="info-label">Experience</div><div class="info-value">{{ teacher_application.experience|default:"Not provided" }}</div></div>
+          <div><div class="info-label">{{ t.experience }}</div><div class="info-value">{{ teacher_application.experience|default:t.not_provided }}</div></div>
         </div>
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-bolt"></i></div>
-          <div><div class="info-label">Expertise</div><div class="info-value">{{ teacher_application.get_expertise_display|default:"Not provided" }}</div></div>
+          <div><div class="info-label">{{ t.expertise }}</div><div class="info-value">{{ teacher_application.get_expertise_display|default:t.not_provided }}</div></div>
         </div>
         {% endif %}
       </div>
 
       <div class="card">
-        <div class="card-title"><i class="fa-solid fa-chart-simple"></i> {% if is_teacher %}Portfolio stats{% else %}Learning stats{% endif %}</div>
+        <div class="card-title"><i class="fa-solid fa-chart-simple"></i> {% if is_teacher %}{{ t.portfolio_stats }}{% else %}{{ t.learning_stats }}{% endif %}</div>
         <div class="stat-grid">
-          <div class="stat-box"><div class="stat-num">{{ stats.courses }}</div><div class="stat-label">{% if is_teacher %}Courses{% else %}Enrolled{% endif %}</div></div>
+          <div class="stat-box"><div class="stat-num">{{ stats.courses }}</div><div class="stat-label">{% if is_teacher %}{{ t.courses }}{% else %}{{ t.enrolled }}{% endif %}</div></div>
           {% if is_teacher %}
-          <div class="stat-box"><div class="stat-num">{{ stats.published }}</div><div class="stat-label">Published</div></div>
-          <div class="stat-box"><div class="stat-num">{{ stats.drafts }}</div><div class="stat-label">Drafts</div></div>
-          <div class="stat-box"><div class="stat-num">{{ stats.students }}</div><div class="stat-label">Enrolled students</div></div>
+          <div class="stat-box"><div class="stat-num">{{ stats.published }}</div><div class="stat-label">{{ t.published }}</div></div>
+          <div class="stat-box"><div class="stat-num">{{ stats.drafts }}</div><div class="stat-label">{{ t.draft }}</div></div>
+          <div class="stat-box"><div class="stat-num">{{ stats.students }}</div><div class="stat-label">{{ t.enrolled_students }}</div></div>
           {% endif %}
-          <div class="stat-box wide"><div class="stat-num">{{ stats.videos }}</div><div class="stat-label">Videos</div></div>
+          <div class="stat-box wide"><div class="stat-num">{{ stats.videos }}</div><div class="stat-label">{{ t.videos }}</div></div>
         </div>
       </div>
 
@@ -756,7 +761,7 @@
 
     {% if is_teacher %}
     <div class="card premium-course-card">
-      <div class="card-title premium-title"><i class="fa-solid fa-video" style="color:var(--secondary);"></i> My Courses <span class="course-count-badge"><i class="fa-solid fa-layer-group"></i> {{ data|length }} Courses</span></div>
+      <div class="card-title premium-title"><i class="fa-solid fa-video" style="color:var(--secondary);"></i> {{ t.my_courses_title }} <span class="course-count-badge"><i class="fa-solid fa-layer-group"></i> {{ data|length }} {{ t.courses_count_suffix }}</span></div>
       <div class="course-list premium-list" id="courseList">
         {% for course in data %}
         <div class="premium-item" data-course-id="{{ course.id }}">
@@ -767,14 +772,14 @@
             <div class="premium-thumb" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-video" style="color:rgba(255,255,255,.85);font-size:1.4rem;"></i></div>
             {% endif %}
             <span class="thumb-play"><i class="fa-solid fa-play"></i></span>
-            {% if not course.is_published %}<span class="draft-chip">Draft</span>{% endif %}
+            {% if not course.is_published %}<span class="draft-chip">{{ t.draft }}</span>{% endif %}
           </div>
           <div class="premium-details">
             <div class="premium-top">
               <span class="premium-category"><i class="fa-regular fa-folder-open"></i> {{ course.category_display }}</span>
-              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-solid fa-list"></i> {{ course.video_count }} videos</span>
-              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-regular fa-user"></i> {{ course.student_count }} students</span>
-              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-solid fa-circle-question"></i> {{ course.quiz_count }} quizzes</span>
+              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-solid fa-list"></i> {{ course.video_count }} {{ t.videos_word }}</span>
+              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-regular fa-user"></i> {{ course.student_count }} {{ t.students_word }}</span>
+              <span class="course-count-badge" style="font-size:0.7rem;"><i class="fa-solid fa-circle-question"></i> {{ course.quiz_count }} {{ t.quizzes_word }}</span>
             </div>
             <h3 class="premium-course-title">{{ course.title }}</h3>
             <p class="premium-description">{{ course.description|truncatechars:85 }}</p>
@@ -789,9 +794,9 @@
                       data-is-published="{{ course.is_published|yesno:'1,0' }}"
                       title="{% if course.is_published %}Visible to students — click to move back to draft{% else %}Click to publish this course{% endif %}">
                 {% if course.is_published %}
-                  <i class="fas fa-circle-check"></i> Published
+                  <i class="fas fa-circle-check"></i> {{ t.published }}
                 {% else %}
-                  <i class="fa-solid fa-rocket"></i> Publish
+                  <i class="fa-solid fa-rocket"></i> {{ t.publish }}
                 {% endif %}
               </button>
             </div>
@@ -804,14 +809,14 @@
                     data-level="{{ course.level }}"
                     data-price="{{ course.Course_price }}"
                     data-description="{{ course.description|escape }}">
-              <i class="fa-regular fa-pen-to-square"></i> Edit
+              <i class="fa-regular fa-pen-to-square"></i> {{ t.edit }}
             </button>
             <a href="{% url 'delet_course' course.id %}" class="action-btn delete-btn"
                data-confirm="Delete &quot;{{ course.title|escape }}&quot;? This also removes its videos and quizzes.">
-              <i class="fa-regular fa-trash-can"></i> Delete
+              <i class="fa-regular fa-trash-can"></i> {{ t.delete }}
             </a>
             <a href="{% url 'quiz' %}?course_id={{ course.id }}" class="action-btn quiz-btn">
-              <i class="fa-solid fa-circle-question"></i> Quiz
+              <i class="fa-solid fa-circle-question"></i> {{ t.quiz_btn }}
             </a>
 
             <button type="button" class="action-btn playlist-btn"
@@ -820,19 +825,19 @@
                     data-course-title="{{ course.title|escape }}"
                     data-playlist-url="{% url 'get_playlist_videos' course.id %}"
                     data-add-video-url="{% url 'add_playlist' course.id %}">
-              <i class="fa-solid fa-list-ul"></i> Playlist
+              <i class="fa-solid fa-list-ul"></i> {{ t.playlist }}
             </button>
           </div>
         </div>
         {% empty %}
         <div class="premium-empty">
           <i class="fa-solid fa-video-slash"></i>
-          <p>You haven't created any courses yet.</p>
+          <p>{{ t.you_havent_created_courses }}</p>
           <p style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">
-            Playlists and video uploads live inside a course, so create one first.
+            {{ t.playlists_inside_course }}
           </p>
           <button type="button" class="btn btn-primary" id="emptyCreateCourse" style="margin-top:0.8rem;">
-            <i class="fa-solid fa-plus"></i> Create your first course
+            <i class="fa-solid fa-plus"></i> {{ t.create_first_course }}
           </button>
         </div>
         {% endfor %}
@@ -842,7 +847,7 @@
 
     {% if not is_teacher %}
     <div class="card premium-course-card">
-      <div class="card-title premium-title"><i class="fa-solid fa-book-open" style="color:var(--info);"></i> My Enrolled Courses <span class="course-count-badge"><i class="fa-solid fa-layer-group"></i> {{ enrolled_courses|length }} Courses</span></div>
+      <div class="card-title premium-title"><i class="fa-solid fa-book-open" style="color:var(--info);"></i> {{ t.my_enrolled_courses }} <span class="course-count-badge"><i class="fa-solid fa-layer-group"></i> {{ enrolled_courses|length }} {{ t.courses_count_suffix }}</span></div>
       <div class="course-list premium-list">
         {% for course in enrolled_courses %}
         <div class="student-course-item" data-course-id="{{ course.id }}">
@@ -858,9 +863,9 @@
             <h4 class="student-course-title">{{ course.title }}</h4>
             <div class="student-course-meta">
               <span><i class="fa-regular fa-user"></i> {{ course.student.get_full_name|default:course.student.email }}</span>
-              <span><i class="fa-regular fa-clock"></i> {{ course.video_count }} lessons</span>
+              <span><i class="fa-regular fa-clock"></i> {{ course.video_count }} {{ t.lessons_word }}</span>
               <span><i class="fa-solid fa-chart-simple"></i> {{ course.level_display }}</span>
-              <span class="enrolled-badge"><i class="fa-solid fa-check-circle"></i> Enrolled</span>
+              <span class="enrolled-badge"><i class="fa-solid fa-check-circle"></i> {{ t.enrolled }}</span>
             </div>
           </div>
           <button type="button" class="action-btn student-playlist-btn playlist-btn"
@@ -869,14 +874,13 @@
                   data-course-title="{{ course.title|escape }}"
                   data-playlist-url="{% url 'get_playlist_videos' course.id %}"
                   data-add-video-url="">
-            <i class="fa-solid fa-list-ul"></i> Playlist
+            <i class="fa-solid fa-list-ul"></i> {{ t.playlist }}
           </button>
         </div>
         {% empty %}
         <div class="premium-empty">
           <i class="fa-solid fa-book-open"></i>
-          <p>You haven't enrolled in any courses yet.</p>
-          <a href="{% url 'index' %}" class="btn btn-primary" style="margin-top:1rem;"><i class="fa-solid fa-compass"></i> Browse Courses</a>
+          <p>{{ t.you_havent_enrolled }}</p>
         </div>
         {% endfor %}
       </div>
@@ -891,7 +895,7 @@
   <div class="modal" id="courseModal" data-autopen="{% if course_form_open %}1{% endif %}">
     <div class="modal-box">
       <div class="modal-header">
-        <h2><i class="fa-solid fa-circle-plus"></i> <span id="courseModalTitle">{% if course_form.instance %}Edit Course{% else %}Add New Course{% endif %}</span></h2>
+        <h2><i class="fa-solid fa-circle-plus"></i> <span id="courseModalTitle">{% if course_form.instance %}{{ t.edit_course }}{% else %}{{ t.add_new_course }}{% endif %}</span></h2>
         <button type="button" class="close-modal" id="closeModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form method="POST" enctype="multipart/form-data" action="{% url 'prof_course' %}" id="courseForm">
@@ -899,45 +903,45 @@
         <input type="hidden" name="course_id" id="courseIdInput" value="{% if course_form.instance %}{{ course_form.instance.id }}{% endif %}">
         {% if course_form.non_field_errors %}
         <div class="modal-error">
-          <i class="fa-solid fa-circle-exclamation"></i> Please fix the following:
+          <i class="fa-solid fa-circle-exclamation"></i> {{ t.fix_following }}
           <ul>{% for error in course_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
         </div>
         {% endif %}
         <div class="form-grid">
           <div class="form-group full">
-            <label for="{{ course_form.title.id_for_label }}">Course Title</label>
+            <label for="{{ course_form.title.id_for_label }}">{{ t.course_title }}</label>
             {{ course_form.title }}
             {% for error in course_form.title.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group">
-            <label for="{{ course_form.category.id_for_label }}">Category</label>
+            <label for="{{ course_form.category.id_for_label }}">{{ t.category }}</label>
             {{ course_form.category }}
             {% for error in course_form.category.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group">
-            <label for="{{ course_form.level.id_for_label }}">Level</label>
+            <label for="{{ course_form.level.id_for_label }}">{{ t.level }}</label>
             {{ course_form.level }}
             {% for error in course_form.level.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group">
-            <label for="{{ course_form.Course_price.id_for_label }}">Price ($)</label>
+            <label for="{{ course_form.Course_price.id_for_label }}">{{ t.price_label }}</label>
             {{ course_form.Course_price }}
             {% for error in course_form.Course_price.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group">
-            <label for="{{ course_form.vedio.id_for_label }}">Video</label>
+            <label for="{{ course_form.vedio.id_for_label }}">{{ t.video_label }}</label>
             {{ course_form.vedio }}
-            <span class="form-hint">{% if course_form.instance %}Leave empty to keep the current video{% else %}MP4 or WebM{% endif %}</span>
+            <span class="form-hint">{% if course_form.instance %}{{ t.keep_current_video }}{% else %}MP4 or WebM{% endif %}</span>
             {% for error in course_form.vedio.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group full">
-            <label for="{{ course_form.description.id_for_label }}">Description</label>
+            <label for="{{ course_form.description.id_for_label }}">{{ t.description }}</label>
             {{ course_form.description }}
             {% for error in course_form.description.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group full">
             <button type="submit" class="btn btn-primary" id="courseSubmitBtn" style="width:100%; justify-content:center;">
-              <i class="fa-solid fa-cloud-arrow-up"></i> {% if course_form.instance %}Save Changes{% else %}Create Draft{% endif %}
+              <i class="fa-solid fa-cloud-arrow-up"></i> {% if course_form.instance %}{{ t.save_changes }}{% else %}{{ t.create_draft }}{% endif %}
             </button>
           </div>
         </div>
@@ -949,42 +953,42 @@
   {% if info.role == 'student' and teacher_application.status != 'pending' %}
   <div class="modal" id="teacherModal" data-autopen="{% if teacher_form_open %}1{% endif %}">
     <div class="modal-box">
-      <div class="modal-header"><h2><i class="fa-solid fa-chalkboard-user"></i> Apply as Teacher</h2><button type="button" class="close-modal" id="closeTeacherModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="modal-header"><h2><i class="fa-solid fa-chalkboard-user"></i> {{ t.apply_teacher }}</h2><button type="button" class="close-modal" id="closeTeacherModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
       <form method="POST" action="{% url 'apply_teacher' %}" enctype="multipart/form-data" id="teacherForm">
         {% csrf_token %}
         {% if teacher_form.non_field_errors %}
         <div class="modal-error">
-          <i class="fa-solid fa-circle-exclamation"></i> Please fix the following:
+          <i class="fa-solid fa-circle-exclamation"></i> {{ t.fix_following }}
           <ul>{% for error in teacher_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
         </div>
         {% endif %}
         <div class="form-grid">
           <div class="form-group">
-            <label for="{{ teacher_form.experience.id_for_label }}">Years of Experience</label>
+            <label for="{{ teacher_form.experience.id_for_label }}">{{ t.years_experience }}</label>
             {{ teacher_form.experience }}
             {% for error in teacher_form.experience.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group">
-            <label for="{{ teacher_form.expertise.id_for_label }}">Expertise Area</label>
+            <label for="{{ teacher_form.expertise.id_for_label }}">{{ t.expertise_area }}</label>
             {{ teacher_form.expertise }}
             {% for error in teacher_form.expertise.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group full">
-            <label for="{{ teacher_form.portfolio.id_for_label }}">Portfolio / LinkedIn URL</label>
+            <label for="{{ teacher_form.portfolio.id_for_label }}">{{ t.portfolio_link }}</label>
             {{ teacher_form.portfolio }}
             {% for error in teacher_form.portfolio.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group full">
-            <label for="{{ teacher_form.c_v.id_for_label }}">CV</label>
+            <label for="{{ teacher_form.c_v.id_for_label }}">{{ t.cv_label }}</label>
             {{ teacher_form.c_v }}
             {% for error in teacher_form.c_v.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
           <div class="form-group full">
-            <label for="{{ teacher_form.reason.id_for_label }}">Why do you want to teach?</label>
+            <label for="{{ teacher_form.reason.id_for_label }}">{{ t.why_teach }}</label>
             {{ teacher_form.reason }}
             {% for error in teacher_form.reason.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
           </div>
-          <div class="form-group full"><button type="submit" class="btn btn-warning" style="width:100%; justify-content:center;"><i class="fa-solid fa-paper-plane"></i> Submit Application</button></div>
+          <div class="form-group full"><button type="submit" class="btn btn-warning" style="width:100%; justify-content:center;"><i class="fa-solid fa-paper-plane"></i> {{ t.submit_application }}</button></div>
         </div>
       </form>
     </div>
@@ -994,43 +998,43 @@
   <div class="playlist-overlay" id="playlistOverlay"></div>
   <div class="playlist-sidebar" id="playlistSidebar">
     <div class="playlist-header">
-      <h3><i class="fa-solid fa-list-ul" style="color:var(--secondary);"></i> <span id="playlistCourseTitle">Course Playlist</span></h3>
+      <h3><i class="fa-solid fa-list-ul" style="color:var(--secondary);"></i> <span id="playlistCourseTitle">{{ t.course_playlist }}</span></h3>
       <button class="close-playlist" id="closePlaylist" aria-label="Close playlist"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="video-player-container hidden" id="videoPlayerContainer">
       <video id="videoPlayer" controls preload="metadata">
         <source src="" type="video/mp4">
       </video>
-      <div class="video-title" id="videoPlayerTitle">Now Playing</div>
+      <div class="video-title" id="videoPlayerTitle">{{ t.now_playing }}</div>
       <button class="close-video" id="closeVideoPlayer" aria-label="Close player"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div id="playlistContent"></div>
     <div class="playlist-footer">
-      <span id="playlistTotal"><i class="fa-regular fa-circle-play"></i> Total: 0 videos, 0 quizzes</span>
+      <span id="playlistTotal"><i class="fa-regular fa-circle-play"></i> {{ t.total_videos_quizzes }}</span>
       {% if is_teacher %}
       <button type="button" class="add-video-btn" id="showAddVideoBtn"
-         title="Add a video to this course playlist"><i class="fa-solid fa-plus"></i> Add Video</button>
+         title="{{ t.add_video }}"><i class="fa-solid fa-plus"></i> {{ t.add_video }}</button>
       {% else %}
       <button type="button" class="add-video-btn is-disabled" id="showAddVideoBtn" disabled
-         aria-disabled="true" style="display:none;opacity:.5;cursor:not-allowed;"><i class="fa-solid fa-plus"></i> Add Video</button>
+         aria-disabled="true" style="display:none;opacity:.5;cursor:not-allowed;"><i class="fa-solid fa-plus"></i> {{ t.add_video }}</button>
       {% endif %}
     </div>
     <div class="owner-note" id="playlistOwnerNote" style="display:none;">
-      <i class="fa-solid fa-lock"></i> Only the course owner can add videos.
+      <i class="fa-solid fa-lock"></i> {{ t.only_owner_add }}
     </div>
     <div id="addVideoForm" style="display:none; margin-top:0.5rem; padding:0.8rem; background:var(--hover); border-radius:16px;">
       <div class="file-input-wrapper">
       <input type="file" id="videoFileInput" accept="video/*,.mp4,.webm,.ogv,.ogg,.mov,.mkv,.avi,.wmv,.flv,.m4v,.mpg,.mpeg,.3gp">
-        <span class="file-name" id="fileNameDisplay">No file selected</span>
+        <span class="file-name" id="fileNameDisplay">{{ t.no_file_selected }}</span>
       </div>
       <div class="file-upload-actions">
-        <button class="upload-cancel" id="cancelFileUpload"><i class="fa-solid fa-xmark"></i> Cancel</button>
-        <button class="upload-confirm" id="confirmFileUpload"><i class="fa-solid fa-check"></i> Upload Video</button>
+        <button class="upload-cancel" id="cancelFileUpload"><i class="fa-solid fa-xmark"></i> {{ t.cancel }}</button>
+        <button class="upload-confirm" id="confirmFileUpload"><i class="fa-solid fa-check"></i> {{ t.upload_video }}</button>
       </div>
     </div>
   </div>
 
-  <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMessage">Action completed!</span></div>
+  <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMessage">{{ t.action_completed }}</span></div>
 
   <script>
   (function () {
@@ -1082,11 +1086,19 @@
 
     const courseModal = $('courseModal');
     const teacherModal = $('teacherModal');
+    const applyTeacherBtn = $('applyTeacherBtn');
     const courseForm = $('courseForm');
     const courseIdInput = $('courseIdInput');
     const courseModalTitle = $('courseModalTitle');
     const courseSubmitBtn = $('courseSubmitBtn');
     const videoFileInput = $('videoFileInput');
+
+    /* -------- FIX 1: Null-guard the Apply Teacher button -------- */
+    if (applyTeacherBtn) {
+      applyTeacherBtn.addEventListener('click', function () {
+        setModalState(teacherModal, true);
+      });
+    }
 
     function setModalState(modal, open) {
       if (!modal) return;
@@ -1154,10 +1166,14 @@
     if (emptyCreateBtn) {
       emptyCreateBtn.addEventListener('click', function () { openCourseModal(null); });
     }
-    $('closeModal') && $('closeModal').addEventListener('click', closeCourseModal);
-    $('closeTeacherModal') && $('closeTeacherModal').addEventListener('click', function () {
-      setModalState(teacherModal, false);
-    });
+    if ($('closeModal')) {
+      $('closeModal').addEventListener('click', closeCourseModal);
+    }
+    if ($('closeTeacherModal')) {
+      $('closeTeacherModal').addEventListener('click', function () {
+        setModalState(teacherModal, false);
+      });
+    }
 
     document.addEventListener('click', function (e) {
       if (e.target === courseModal) closeCourseModal();
@@ -1242,8 +1258,8 @@
             self.dataset.isPublished = published ? '1' : '0';
             self.classList.toggle('published', published);
             self.innerHTML = published
-              ? '<i class="fas fa-circle-check"></i> Published'
-              : '<i class="fa-solid fa-rocket"></i> Publish';
+              ? '<i class="fas fa-circle-check"></i> {{ t.published }}'
+              : '<i class="fa-solid fa-rocket"></i> {{ t.publish }}';
             self.title = published
               ? 'Visible to students \u2014 click to move back to draft'
               : 'Click to publish this course';
@@ -1319,7 +1335,9 @@
       }
       if (videoContainer) videoContainer.classList.add('hidden');
     }
-    $('closeVideoPlayer') && $('closeVideoPlayer').addEventListener('click', closeVideoPlayer);
+    if ($('closeVideoPlayer')) {
+      $('closeVideoPlayer').addEventListener('click', closeVideoPlayer);
+    }
 
     function renderPlaylist(data, token) {
       const videos = Array.isArray(data.videos) ? data.videos : [];
@@ -1482,8 +1500,10 @@
       currentUploadUrl = '';
     }
 
-    $('closePlaylist') && $('closePlaylist').addEventListener('click', closePlaylist);
-    overlay && overlay.addEventListener('click', closePlaylist);
+    if ($('closePlaylist')) {
+      $('closePlaylist').addEventListener('click', closePlaylist);
+    }
+    if (overlay) overlay.addEventListener('click', closePlaylist);
 
     document.querySelectorAll('[data-playlist-btn]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
@@ -1614,7 +1634,7 @@
       });
     }
 
-    cancelUploadBtn && cancelUploadBtn.addEventListener('click', resetUploadForm);
+    if (cancelUploadBtn) cancelUploadBtn.addEventListener('click', resetUploadForm);
 
     if (confirmUploadBtn) {
       confirmUploadBtn.addEventListener('click', function () {

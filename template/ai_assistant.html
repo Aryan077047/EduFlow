@@ -4,10 +4,8 @@
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="{% static 'css/common.css' %}" rel="stylesheet" />
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Plus Jakarta Sans', sans-serif; background:#f4f7f1; }
 
 .ai-layout-wrap {
     min-height:calc(100vh - 120px);
@@ -105,12 +103,12 @@ body { font-family:'Plus Jakarta Sans', sans-serif; background:#f4f7f1; }
   <div class="ai-head">
     <div class="ai-icon"><i class="fa-solid fa-robot"></i></div>
     <div>
-      <h1>AI Study Assistant</h1>
-      <p>Ask anything about your courses, lessons or study plan.</p>
+      <h1>{{ t.ai_assistant }}</h1>
+      <p>{{ t.ai_subtitle }}</p>
     </div>
     <div class="spacer"></div>
     <button type="button" class="ai-clear" id="clearChatBtn" title="Delete the whole conversation">
-      <i class="fa-solid fa-trash-can"></i> Clear chat
+      <i class="fa-solid fa-trash-can"></i> {{ t.clear_chat }}
     </button>
   </div>
 
@@ -153,9 +151,9 @@ body { font-family:'Plus Jakarta Sans', sans-serif; background:#f4f7f1; }
     {% csrf_token %}
     {% if my_courses %}
     <div class="course-pick">
-      <label for="courseSelect"><i class="fa-solid fa-book"></i> About course:</label>
+      <label for="courseSelect"><i class="fa-solid fa-book"></i> {{ t.about_course }}</label>
       <select id="courseSelect">
-        <option value="">Any topic</option>
+        <option value="">{{ t.any_topic }}</option>
         {% for c in my_courses %}
         <option value="{{ c.id }}">{{ c.title }}</option>
         {% endfor %}
@@ -166,11 +164,11 @@ body { font-family:'Plus Jakarta Sans', sans-serif; background:#f4f7f1; }
       <textarea id="questionInput" rows="1" maxlength="2000"
         placeholder="{% if request.user.role == 'teacher' %}e.g. Draft 5 quiz questions about Python loops{% else %}e.g. Explain recursion like I'm 10{% endif %}"></textarea>
       <button type="button" class="btn-send" id="sendBtn">
-        <i class="fa-solid fa-paper-plane"></i> Ask
+        <i class="fa-solid fa-paper-plane"></i> {{ t.ask }}
       </button>
     </div>
     <div class="hint-row">
-      <span>Enter to send &middot; Shift+Enter for a new line</span>
+      <span>{{ t.enter_to_send }}</span>
       <span id="charCount">0 / 2000</span>
     </div>
   </div>

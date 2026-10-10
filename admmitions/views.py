@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 import secrets
 from django.contrib.auth.decorators import login_required
-from .models import Course, TeacherApplication, ProfileImg, Enrollment, Playlist, Lesson, Post, Comment, Like, Quiz, Question, Answer, QuizAttempt, StudentAnswer, PasswordResetOTP, AIChatMessage
+from .models import Course, TeacherApplication, ProfileImg, Enrollment, Playlist, Lesson, Post, Comment, Like, Quiz, Question, Answer, QuizAttempt, StudentAnswer, PasswordResetOTP, AIChatMessage, CourseOrder
 from django.contrib.auth import login
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
@@ -29,6 +29,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from django.contrib.auth import logout
+import hesabpay
 from .models import (
     User,
     Course,
@@ -40,6 +41,7 @@ from .models import (
     Post,
     Comment,
     Like,
+    CourseOrder,
 )
 User = get_user_model()
 
@@ -304,6 +306,12 @@ def user_login(request):
             user = None
 
         if user is not None:
+            # A pre-login language choice (cookie) seeds the new session.
+            from onlinestudy.i18n_local import LANGUAGES
+            cookie_lang = request.COOKIES.get(settings.SITE_LANG_COOKIE)
+            if cookie_lang in LANGUAGES and user.language != cookie_lang:
+                user.language = cookie_lang
+                user.save(update_fields=['language'])
             login(request, user)
 
             if user.role == 'teacher':
@@ -603,6 +611,11 @@ def register_teacher(request):
         form = teacher_form(request.POST)
         if form.is_valid():
             user = form.save()
+            from onlinestudy.i18n_local import LANGUAGES
+            cookie_lang = request.COOKIES.get(settings.SITE_LANG_COOKIE)
+            if cookie_lang in LANGUAGES:
+                user.language = cookie_lang
+                user.save(update_fields=['language'])
             login(request, user)
             return redirect('index')
     else:
@@ -611,8 +624,33 @@ def register_teacher(request):
     return render(request, 'teacher_add.html', {'form': form})
 
 
+
+
 def setting(request):
     return render(request, 'setting.html')
+
+
+@login_required
+@require_POST
+def save_language(request):
+    """Store the UI language (Settings > Language) on the user, then mirror
+    it into LANG_COOKIE so pages that render before login also follow it."""
+    from onlinestudy.i18n_local import LANGUAGES
+
+    code = (request.POST.get('language') or '').strip()
+    if code not in LANGUAGES:
+        return redirect('setting')
+
+    request.user.language = code
+    request.user.save(update_fields=['language'])
+
+    response = redirect(request.POST.get('next') or 'setting')
+    if response.status_code == 302 and '://' not in response.url:
+        response.set_cookie(
+            settings.SITE_LANG_COOKIE, code, max_age=365 * 24 * 3600,
+            httponly=True, samesite='Lax',
+        )
+    return response
 
 
 @login_required
@@ -940,28 +978,58 @@ def enroll_course(request, course_id):
         messages.error(request, "This course is not published yet.")
         return redirect("index")
 
-    enrollment, created = Enrollment.objects.get_or_create(
-        student=request.user,
-        course=course
-    )
+    enrollment = Enrollment.objects.filter(
+        student=request.user, course=course
+    ).first()
+    if enrollment:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'info',
+                'message': 'You are already enrolled in this course.'
+            })
+
+        messages.info(request, "You are already enrolled in this course.")
+        return redirect("user_profile")
+
+    order = CourseOrder.objects.create(student=request.user, course=course)
+    try:
+        session = hesabpay.checkout(
+            order,
+            user=request.user,
+            request=request,
+            items=[{
+                'id': str(course.id),
+                'name': course.title,
+                'price': float(course.Course_price),
+            }],
+        )
+    except hesabpay.exceptions.HesabPayError as exc:
+        order.delete()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'error',
+                'error': f'Payment service error: {exc}',
+            }, status=500)
+        messages.error(request, 'Payment service is temporarily unavailable. Please try again later.')
+        return redirect('index')
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
-            'status': 'success',
-            'created': created,
-            'message': (
-                'You have successfully enrolled in this course.'
-                if created else
-                'You are already enrolled in this course.'
-            )
+            'status': 'checkout',
+            'checkout_url': session.url,
         })
 
-    if created:
-        messages.success(request, "You have successfully enrolled in this course.")
-    else:
-        messages.info(request, "You are already enrolled in this course.")
+    return redirect(session.url)
 
-    return redirect("user_profile")
+
+@login_required
+def payment_success(request):
+    return render(request, 'payment_success.html')
+
+
+@login_required
+def payment_failure(request):
+    return render(request, 'payment_failure.html')
 
 
 @login_required

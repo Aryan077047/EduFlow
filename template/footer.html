@@ -168,11 +168,8 @@
         
         <!-- Column 1: About -->
         <div class="footer-col footer-about">
-            <h4>Gull Dashboard</h4>
-            <p>
-                A modern and clean admin dashboard template built with Django. 
-                Designed for performance, elegance, and excellent user experience.
-            </p>
+            <h4>EduFlow</h4>
+            {{ t.footer_about }}
             <div class="social-icons">
                 <a href="#" title="Twitter"><i class="fa-brands fa-twitter"></i></a>
                 <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -183,34 +180,34 @@
 
         <!-- Column 2: Quick Links -->
         <div class="footer-col">
-            <h4>Quick Links</h4>
+            <h4>{{ t.quick_links }}</h4>
             <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Dashboard</a></li>
-                <li><a href="#">My Profile</a></li>
-                <li><a href="#">Courses</a></li>
-                <li><a href="#">Instructors</a></li>
+                <li><a href="#">{{ t.home }}</a></li>
+                <li><a href="#">{{ t.dashboard }}</a></li>
+                <li><a href="#">{{ t.my_profile }}</a></li>
+                <li><a href="#">{{ t.courses }}</a></li>
+                <li><a href="#">{{ t.instructors }}</a></li>
             </ul>
         </div>
 
         <!-- Column 3: Resources -->
         <div class="footer-col">
-            <h4>Resources</h4>
+            <h4>{{ t.resources }}</h4>
             <ul>
-                <li><a href="#">Documentation</a></li>
-                <li><a href="#">Support Center</a></li>
-                <li><a href="#">Privacy Policy</a></li>
-                <li><a href="#">Terms of Service</a></li>
-                <li><a href="#">FAQs</a></li>
+                <li><a href="#">{{ t.documentation }}</a></li>
+                <li><a href="#">{{ t.support_center }}</a></li>
+                <li><a href="#">{{ t.privacy_policy }}</a></li>
+                <li><a href="#">{{ t.terms_of_service }}</a></li>
+                <li><a href="#">{{ t.faqs }}</a></li>
             </ul>
         </div>
 
         <!-- Column 4: Contact -->
         <div class="footer-col">
-            <h4>Contact Us</h4>
+            <h4>{{ t.contact_us }}</h4>
             <ul>
-                <li><a href="#">Email: support@gull.com</a></li>
-                <li><a href="#">Phone: +93 700 123 456</a></li>
+                <li><a href="#">{{ t.email_label }}: support@gull.com</a></li>
+                <li><a href="#">{{ t.phone }}: +93 700 123 456</a></li>
                 <li><a href="#">Kabul, Afghanistan</a></li>
             </ul>
         </div>

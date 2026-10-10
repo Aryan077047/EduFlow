@@ -1,15 +1,36 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang }}" dir="{{ lang_dir }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings · EduFlow</title>
 
+  <!-- 🌙 Dark mode — set theme BEFORE CSS loads -->
+  <script>
+  (function () {
+      try {
+          var saved = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+      } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+      }
+  })();
+  </script>
+
+  {% if lang_dir == 'rtl' %}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600;700;800&display=swap">
+  <style>
+    body, input, button, select, a, h1, h2, strong, small, label { font-family:'Noto Naskh Arabic','Plus Jakarta Sans',sans-serif; }
+  </style>
+  {% endif %}
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="{% static 'css/common.css' %}" rel="stylesheet" />
   <style>
     /* ==================== THEME TOKENS ==================== */
     :root {
@@ -247,6 +268,25 @@
 
     .group.danger .group-head,
     .group.danger .group-head i { color:var(--red-1); }
+
+    /* ==================== LANGUAGE PICKER ==================== */
+    [dir="rtl"] .lang-select {
+      background-position: left .9rem center;
+    }
+    .lang-select {
+      appearance:none; -webkit-appearance:none;
+      padding:.65rem 2.4rem .65rem 1rem;
+      border:1px solid var(--line); border-radius:12px;
+      background:var(--input-bg) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237d8f82' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right .9rem center;
+      font-family:inherit; font-size:.85rem; font-weight:700;
+      color:var(--primary-dark); cursor:pointer; min-width:190px;
+    }
+    .lang-select:focus { outline:none; border-color:var(--green-1); }
+    .lang-note {
+      font-size:.75rem; color:var(--green-3); font-weight:700;
+      margin-right:.6rem; display:none;
+    }
+    .lang-note.show { display:inline; }
     .group.danger .row:hover { background:rgba(220,38,38,.03); }
     [data-theme="dark"] .group.danger .row:hover { background:rgba(239,68,68,.08); }
 
@@ -272,34 +312,49 @@
     <div class="head">
       <div class="head-left">
         <a href="{% url 'index' %}" class="back-link">
-          <i class="fas fa-arrow-left"></i> Back to Dashboard
+          <i class="fas fa-arrow-left"></i> {{ t.back_to_dashboard }}
         </a>
         <div>
-          <h1><i class="fas fa-cog"></i> Settings</h1>
-          <div class="sub">Manage appearance, security, and your account.</div>
+          <h1><i class="fas fa-cog"></i> {{ t.settings }}</h1>
+          <div class="sub">{{ t.manage_settings }}</div>
         </div>
       </div>
-      <div class="save-chip"><i class="fas fa-circle-check"></i> Auto-saved</div>
+      <div class="save-chip"><i class="fas fa-circle-check"></i> {{ t.auto_saved }}</div>
     </div>
 
     <!-- APPEARANCE -->
     <div class="group">
       <div class="group-head">
-        <i class="fas fa-palette"></i> Appearance
-        <span class="count">1 option</span>
+        <i class="fas fa-palette"></i> {{ t.appearance }}
+        <span class="count">2 options</span>
       </div>
       <div class="row">
         <div class="label">
-          <strong>Dark mode</strong>
-          <small>Switch the interface to a dark color scheme.</small>
+          <strong>{{ t.dark_mode }}</strong>
+          <small>{{ t.dark_mode_hint }}</small>
         </div>
         <label class="sw">
           <input type="checkbox" id="darkModeSwitch">
           <span class="tr"></span>
         </label>
       </div>
+      <div class="row">
+        <div class="label">
+          <strong>{{ t.language }}</strong>
+          <small>{{ t.language_hint }}</small>
+        </div>
+        <form method="POST" action="{% url 'save_language' %}" id="langForm">
+          {% csrf_token %}
+          <span class="lang-note" id="langNote"><i class="fas fa-check"></i> {{ t.language_saved }}</span>
+          <select name="language" id="langSelect" class="lang-select">
+            {% for l in languages %}
+            <option value="{{ l.code }}" {% if l.active %}selected{% endif %}>{{ l.name }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
       <div class="group-foot">
-        <button class="btn btn-green"><i class="fas fa-check"></i> Save changes</button>
+        <button class="btn btn-green" id="langSaveBtn"><i class="fas fa-check"></i> {{ t.save_changes }}</button>
       </div>
     </div>
 
@@ -311,33 +366,33 @@
       </div>
       <div class="row">
         <div class="label">
-          <strong>Change password</strong>
-          <small>Use a strong password with at least 8 characters.</small>
+          <strong>{{ t.change_password }}</strong>
+          <small>{{ t.change_password_hint }}</small>
         </div>
         <div class="stacked">
-          <div class="fld"><label>Current</label><input type="password" placeholder="••••••••"></div>
-          <div class="fld"><label>New</label><input type="password" placeholder="New password"></div>
-          <div class="fld"><label>Confirm</label><input type="password" placeholder="Repeat password"></div>
+          <div class="fld"><label>{{ t.current }}</label><input type="password" placeholder="••••••••"></div>
+          <div class="fld"><label>{{ t.new }}</label><input type="password" placeholder="{{ t.new_password_placeholder }}"></div>
+          <div class="fld"><label>{{ t.confirm }}</label><input type="password" placeholder="{{ t.repeat_password_placeholder }}"></div>
         </div>
       </div>
       <div class="group-foot">
-        <button class="btn btn-ghost">Cancel</button>
-        <button class="btn btn-green"><i class="fas fa-key"></i> Update password</button>
+        <button class="btn btn-ghost">{{ t.cancel }}</button>
+        <button class="btn btn-green"><i class="fas fa-key"></i> {{ t.update_password }}</button>
       </div>
     </div>
 
     <!-- DANGER ZONE -->
     <div class="group danger">
       <div class="group-head">
-        <i class="fas fa-triangle-exclamation"></i> Danger Zone
+        <i class="fas fa-triangle-exclamation"></i> {{ t.danger_zone }}
         <span class="count">1 action</span>
       </div>
       <div class="row">
         <div class="label">
-          <strong class="danger-title">Delete account</strong>
-          <small>This action is permanent and cannot be undone.</small>
+          <strong class="danger-title">{{ t.delete_account }}</strong>
+          <small>{{ t.delete_account_hint }}</small>
         </div>
-        <button class="btn btn-red"><i class="fas fa-trash-alt"></i> Delete</button>
+        <button class="btn btn-red"><i class="fas fa-trash-alt"></i> {{ t.delete }}</button>
       </div>
     </div>
 
@@ -365,6 +420,21 @@
           attributes: true,
           attributeFilter: ['data-theme']
       });
+  })();
+  </script>
+
+  <!-- ==================== LANGUAGE SWITCHER ==================== -->
+  <script>
+  (function () {
+      const form = document.getElementById('langForm');
+      const sel  = document.getElementById('langSelect');
+      const btn  = document.getElementById('langSaveBtn');
+      if (!form || !sel) return;
+
+      // Choosing a language in the select submits immediately; the
+      // "Save changes" button does the same for discoverability.
+      sel.addEventListener('change', () => form.submit());
+      if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); form.submit(); });
   })();
   </script>
 
