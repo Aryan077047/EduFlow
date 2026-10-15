@@ -83,3 +83,44 @@ class PlaylistForm(forms.ModelForm):
                 'accept': VIDEO_ACCEPT,
             }),
         }
+
+
+PLAYLIST_VIDEO_EXTENSIONS = (
+    '.mp4', '.webm', '.ogv', '.ogg', '.mov', '.mkv',
+    '.avi', '.wmv', '.flv', '.m4v', '.mpg', '.mpeg', '.3gp',
+)
+
+
+class PlaylistEntryForm(forms.ModelForm):
+    """Edit one playlist video: title, description, position in the course
+    playlist, and optionally a replacement video file."""
+
+    title = forms.CharField(max_length=200, required=False)
+    description = forms.CharField(
+        max_length=2000, required=False, widget=forms.Textarea(attrs={'rows': 3}),
+    )
+    position = forms.IntegerField(min_value=1, required=False)
+    video = forms.FileField(required=False)
+
+    class Meta:
+        model = Playlist
+        fields = ['title', 'description', 'video']
+
+    def clean_title(self):
+        return (self.cleaned_data.get('title') or '').strip()
+
+    def clean_description(self):
+        return (self.cleaned_data.get('description') or '').strip()
+
+    def clean_video(self):
+        video = self.cleaned_data.get('video')
+        uploaded = self.files.get('video')
+        if not uploaded:
+            return self.instance.video
+        name = (uploaded.name or '').lower()
+        mime = (getattr(uploaded, 'content_type', '') or '')
+        if not (name.endswith(PLAYLIST_VIDEO_EXTENSIONS) or mime.startswith('video/')):
+            raise forms.ValidationError(
+                'Unsupported video format. Allowed: ' + ', '.join(PLAYLIST_VIDEO_EXTENSIONS)
+            )
+        return video

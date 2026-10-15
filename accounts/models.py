@@ -180,3 +180,30 @@ class AIChatMessage(models.Model):
 
     def __str__(self):
         return f'{self.user.email} - {self.role}: {self.content[:40]}'
+
+
+class Notification(models.Model):
+    """An in-app notification shown in the header bell for one user."""
+
+    KIND_CHOICES = (
+        ('info', 'Info'),
+        ('success', 'Success'),
+        ('warning', 'Warning'),
+        ('security', 'Security'),
+    )
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='notifications'
+    )
+    message = models.CharField(max_length=255)
+    link = models.CharField(max_length=255, blank=True, default='')
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES, default='info')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        indexes = [models.Index(fields=['user', 'is_read'])]
+
+    def __str__(self):
+        return f'{self.user.email}: {self.message[:40]}'

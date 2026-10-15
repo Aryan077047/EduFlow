@@ -617,6 +617,51 @@
     .add-video-btn:hover { background:var(--secondary-dark); }
     .add-video-btn.is-disabled { opacity:.5; cursor:not-allowed; }
 
+    /* ================= EDIT PROFILE ================= */
+    .card-title-row { justify-content:space-between; flex-wrap:wrap; }
+    .card-title-row > span { display:flex; align-items:center; gap:6px; }
+    .card-title-row .action-btn { padding:0.35rem 0.8rem; font-size:0.7rem; }
+    .profile-edit-avatar {
+      display:flex; align-items:center; gap:1rem;
+      padding:0.8rem; margin-bottom:0.8rem;
+      background:var(--hover); border:1px dashed var(--border); border-radius:16px;
+    }
+    .profile-edit-avatar img {
+      width:72px; height:72px; border-radius:50%; object-fit:cover;
+      border:3px solid var(--secondary); flex-shrink:0; background:var(--card);
+    }
+    .profile-edit-avatar .form-group { flex:1; min-width:0; }
+    .field-error:empty { display:none; }
+
+    /* ================= PLAYLIST EDIT / DELETE ================= */
+    .playlist-edit-modal { z-index:1050; }
+    .playlist-item .video-desc {
+      font-size:0.68rem; color:var(--text); margin-top:2px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .playlist-manage { display:flex; gap:4px; flex-shrink:0; }
+    .manage-btn {
+      width:30px; height:30px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.7rem; cursor:pointer; border:1px solid transparent;
+      transition:background var(--transition), color var(--transition);
+    }
+    .manage-btn.edit { background:#eef2ff; color:#4f46e5; border-color:#c7d2fe; }
+    .manage-btn.edit:hover { background:#c7d2fe; }
+    .manage-btn.delete { background:#fef2f2; color:var(--danger); border-color:#fecaca; }
+    .manage-btn.delete:hover { background:#fee2e2; }
+    .manage-btn:disabled { opacity:.6; cursor:wait; }
+    [data-theme="dark"] .manage-btn.edit { background:rgba(79,70,229,.15); color:#a5b4fc; border-color:rgba(79,70,229,.4); }
+    [data-theme="dark"] .manage-btn.delete { background:rgba(220,38,38,.15); color:var(--danger); border-color:rgba(220,38,38,.4); }
+    .btn:disabled { opacity:.65; cursor:wait; }
+
+    @media(max-width:480px){
+      .profile-edit-avatar { flex-direction:column; align-items:flex-start; }
+      .playlist-item { flex-wrap:wrap; }
+      .playlist-item .info { flex-basis:calc(100% - 70px); }
+      .playlist-manage { margin-left:auto; }
+    }
+
     /* ================= UTILITIES ================= */
     .avatar-form { display:inline; margin:0; padding:0; }
 

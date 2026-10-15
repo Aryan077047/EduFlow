@@ -5,11 +5,13 @@ from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.core.mail import send_mail
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout, get_user_model, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count, Q, Prefetch
+from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -22,7 +24,8 @@ from .forms import (
     ChangePasswordForm,
     EditProfileForm,
 )
-from .models import AIChatMessage, PasswordResetOTP, ProfileImg
+from .models import AIChatMessage, Notification, PasswordResetOTP, ProfileImg
+from .notifications import notify, serialize as serialize_notification
 from teacher.forms import TeacherApplicationForm, course_form
 from teacher.models import Course, Playlist, TeacherApplication
 from student.models import Comment, Enrollment
@@ -377,61 +380,106 @@ def _verify_page(request, email, form, otp_error=''):
 
 def setting(request):
     if request.user.is_authenticated:
-        return render(request, 'setting.html', {
-            'change_password_form': ChangePasswordForm(user=request.user),
-        })
+        return render(request, 'setting.html', _setting_context(request))
     return render(request, 'setting.html')
+
+
+def _setting_context(request, **extra):
+    context = {
+        'change_password_form': ChangePasswordForm(user=request.user),
+        'delete_account_blockers': account_deletion_blockers(request.user),
+    }
+    context.update(extra)
+    return context
+
+
+def account_deletion_blockers(user):
+    """Reasons this account cannot be self-deleted. Deleting a user cascades
+    to the courses they own (and every other learner's enrollments, orders,
+    comments, likes and quiz attempts on them), so those must be handled
+    before the account can go."""
+    from student.models import CourseOrder, Like, QuizAttempt
+
+    blockers = []
+    if user.is_superuser:
+        blockers.append(
+            'Administrator accounts are protected and cannot be deleted from '
+            'Settings. Ask another administrator to remove this account.'
+        )
+
+    owned = Course.objects.filter(student=user)
+    others = ~Q(student=user)
+    learners = (
+        Enrollment.objects.filter(others, course__in=owned).count()
+        + CourseOrder.objects.filter(others, course__in=owned, paid=True).count()
+    )
+    if learners:
+        blockers.append(
+            'Other students are enrolled in (or have paid for) courses you own. '
+            'Contact an administrator to transfer or close those courses first.'
+        )
+    activity = (
+        Comment.objects.filter(course__in=owned).exclude(user=user).exists()
+        or Like.objects.filter(course__in=owned).exclude(user=user).exists()
+        or QuizAttempt.objects.filter(
+            Q(quiz__course__in=owned) | Q(quiz__teacher=user)
+        ).exclude(student=user).exists()
+    )
+    if activity and not learners:
+        blockers.append(
+            'Other users have commented on, liked or taken quizzes in your '
+            'courses. Delete those courses from your profile first.'
+        )
+    return blockers
 
 
 @login_required
 def change_password(request):
-    """Settings > Security: change the signed-in user's password.
-
-    Verifies the current password with Django's authenticate-style check,
-    validates the new one with the project's AUTH_PASSWORD_VALIDATORS, saves
-    it via set_password (proper hashing), and keeps the session: the login
-    cycle salts the password hash, so unlike the forgot-password reset this
-    does NOT need to re-login.
-    """
+    """Settings > Security: change the signed-in user's password with
+    Django's PasswordChangeForm and keep the current session signed in."""
     if request.method == 'POST':
         form = ChangePasswordForm(user=request.user, data=request.POST)
         if form.is_valid():
-            user = form.user
-            user.set_password(form.cleaned_data['new_password1'])
-            user.save(update_fields=['password'])
-            # Keep the current session valid after the hash change.
-            from django.contrib.auth import update_session_auth_hash
+            user = form.save()
             update_session_auth_hash(request, user)
+            notify(
+                user, 'Your password was changed. If this was not you, reset it now.',
+                link=reverse('setting'), kind='security',
+            )
             messages.success(request, 'Your password was changed successfully.')
             return redirect('setting')
         messages.error(request, 'Please fix the errors below and try again.')
-    else:
-        form = ChangePasswordForm(user=request.user)
+        return render(request, 'setting.html', _setting_context(
+            request, change_password_form=form,
+        ), status=400)
 
-    return render(request, 'setting.html', {
-        'change_password_form': form,
-        'change_password_open': form.is_bound and (form.errors or None) is not None and not form.is_valid(),
-    })
+    return redirect('setting')
 
 
 @login_required
 @require_POST
 def delete_account(request):
-    """Settings > Danger zone: permanently delete the signed-in account.
+    """Settings > Danger zone: permanently delete the signed-in account after
+    re-checking the password. Accounts whose deletion would cascade into
+    other users' data (or protected admins) are refused."""
+    blockers = account_deletion_blockers(request.user)
+    if blockers:
+        messages.error(request, 'Your account was not deleted. ' + blockers[0])
+        return render(request, 'setting.html', _setting_context(
+            request, delete_account_open=True,
+        ), status=403)
 
-    Requires the account's current password (typed into the styled confirm
-    modal) plus CSRF. Related rows cascade (their courses, enrollments,
-    comments, AI conversations...); every cascade target references the user
-    itself, so nobody else's data is touched. Deleting first then logging out
-    is safe: logout only clears the session.
-    """
     confirm_password = request.POST.get('confirm_password') or ''
     if not request.user.check_password(confirm_password):
-        messages.error(request, 'That password is incorrect. Your account was not deleted.')
-        return redirect('setting')
+        return render(request, 'setting.html', _setting_context(
+            request,
+            delete_account_error='That password is incorrect. Your account was not deleted.',
+            delete_account_open=True,
+        ), status=400)
 
     user = request.user
-    user.delete()
+    with transaction.atomic():
+        user.delete()
     logout(request)
     messages.success(request, 'Your account has been permanently deleted.')
     return redirect('index')
@@ -554,6 +602,8 @@ def _profile_page_context(request, **extra):
         'info': user,
         'profile': profile,
         'profileimgForm': ProfileImgForm(instance=profile),
+        'edit_profile_form': EditProfileForm(instance=user),
+        'edit_profile_img_form': ProfileImgForm(instance=profile),
         'playlist_max_upload_bytes': int(getattr(settings, 'PLAYLIST_MAX_UPLOAD_MB', 1024)) * 1024 * 1024,
         'first_owned_course': first_owned_course,
     }
@@ -567,16 +617,84 @@ def profile_img_view(request):
     profile, _ = ProfileImg.objects.get_or_create(user=request.user)
 
     form = ProfileImgForm(request.POST, request.FILES, instance=profile)
-    if form.is_valid():
+    if form.is_valid() and form.cleaned_data.get('picture'):
         form.save()
         messages.success(request, 'Profile picture updated.')
     else:
+        error = form.errors.get('picture')
         messages.error(
             request,
-            'That image could not be uploaded. Use a JPG, PNG, GIF or WEBP file.'
+            error[0] if error else 'That image could not be uploaded. Use a JPG, PNG, GIF or WEBP file.'
         )
 
     return redirect('user_profile')
+
+
+@login_required
+@require_POST
+def edit_profile(request):
+    """Update the signed-in user's own name, email and profile picture.
+    Always bound to request.user, so nobody can edit another profile."""
+    # Validate against fresh copies so a failed submit never leaks the
+    # rejected values into request.user (header, personal info card).
+    user = User.objects.get(pk=request.user.pk)
+    profile, _ = ProfileImg.objects.get_or_create(user=user)
+    form = EditProfileForm(request.POST, instance=user)
+    img_form = ProfileImgForm(request.POST, request.FILES, instance=profile)
+
+    if form.is_valid() and img_form.is_valid():
+        with transaction.atomic():
+            form.save()
+            if img_form.cleaned_data.get('picture'):
+                img_form.save()
+        messages.success(request, 'Your profile was updated.')
+        return redirect('user_profile')
+
+    messages.error(request, 'Please fix the errors below and try again.')
+    context = _profile_page_context(
+        request,
+        edit_profile_form=form,
+        edit_profile_img_form=img_form,
+        edit_profile_open=True,
+    )
+    return render(request, 'user_profile.html', context, status=400)
+
+
+# ============================================================
+# NOTIFICATIONS (header bell)
+# ============================================================
+
+NOTIFICATIONS_PAGE_SIZE = 20
+
+
+@login_required
+def notifications_list(request):
+    mine = Notification.objects.filter(user=request.user)
+    return JsonResponse({
+        'unread_count': mine.filter(is_read=False).count(),
+        'notifications': [serialize_notification(n) for n in mine[:NOTIFICATIONS_PAGE_SIZE]],
+    })
+
+
+@login_required
+@require_POST
+def notification_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, user=request.user)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save(update_fields=['is_read'])
+    return JsonResponse({
+        'success': True,
+        'id': notification.id,
+        'unread_count': Notification.objects.filter(user=request.user, is_read=False).count(),
+    })
+
+
+@login_required
+@require_POST
+def notifications_read_all(request):
+    updated = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True, 'updated': updated, 'unread_count': 0})
 
 
 # ============================================================

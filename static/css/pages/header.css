@@ -234,6 +234,126 @@ body {
     border: 2px solid var(--badge-border);
 }
 
+.badge-count[hidden] { display: none; }
+
+/* ====================== NOTIFICATIONS ====================== */
+.notif-dropdown {
+    position: relative;
+    --notif-unread-bg: #edf7e8;
+    --notif-hover-bg: #f3f8f1;
+    --notif-icon-bg: #dff2d7;
+}
+[data-theme="dark"] .notif-dropdown {
+    --notif-unread-bg: rgba(111, 181, 106, .14);
+    --notif-hover-bg: rgba(255, 255, 255, .04);
+    --notif-icon-bg: #1f2c24;
+}
+.notif-panel {
+    position: absolute;
+    top: 56px;
+    right: 0;
+    width: 360px;
+    max-width: calc(100vw - 24px);
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 35px rgba(29, 53, 36, .14);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity .25s ease, visibility .25s ease, transform .25s ease;
+    z-index: 20;
+    overflow: hidden;
+}
+.notif-panel.active { opacity: 1; visibility: visible; transform: translateY(0); }
+.notif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    color: var(--primary-dark);
+    font-size: .9rem;
+}
+.notif-head strong i { color: var(--light-green); margin-right: 4px; }
+.notif-read-all {
+    border: none;
+    background: var(--surface);
+    color: var(--deep-green);
+    font-size: .72rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+.notif-read-all:hover:not(:disabled) { background: var(--surface-2); }
+.notif-read-all:disabled { opacity: .45; cursor: default; }
+[data-theme="dark"] .notif-read-all { color: var(--accent-green); }
+.notif-list { max-height: min(420px, 60vh); overflow-y: auto; padding: 6px; }
+.notif-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    color: var(--primary-dark);
+    text-decoration: none;
+    transition: background .2s ease;
+}
+.notif-item + .notif-item { margin-top: 2px; }
+a.notif-item:hover, .notif-item:hover { background: var(--notif-hover-bg); color: var(--primary-dark); }
+.notif-item.unread { background: var(--notif-unread-bg); box-shadow: inset 3px 0 0 var(--light-green); }
+.notif-item.unread:hover { background: var(--notif-unread-bg); }
+.notif-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--notif-icon-bg);
+    color: var(--deep-green);
+    font-size: .85rem;
+}
+[data-theme="dark"] .notif-icon { color: var(--accent-green); }
+.notif-item.kind-warning .notif-icon { color: #ca8a04; }
+.notif-item.kind-security .notif-icon { color: var(--red-1); }
+.notif-body { flex: 1; min-width: 0; }
+.notif-msg { margin: 0; font-size: .8rem; line-height: 1.4; overflow-wrap: anywhere; }
+.notif-item.unread .notif-msg { font-weight: 700; }
+.notif-body time { display: block; margin-top: 3px; font-size: .7rem; color: var(--text-light); }
+.notif-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.notif-mark {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--light-green);
+    cursor: pointer;
+    font-size: .72rem;
+}
+.notif-mark:hover { background: var(--light-green); color: #fff; }
+.notif-empty { text-align: center; padding: 28px 16px; color: var(--text-light); }
+.notif-empty i { font-size: 1.6rem; opacity: .6; margin-bottom: 8px; }
+.notif-empty p { margin: 0; font-size: .8rem; }
+
+@media (max-width: 576px) {
+    .notif-panel {
+        position: fixed;
+        top: 70px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+    }
+}
+
 /* ====================== LOGIN ====================== */
 .login-btn {
     height: 42px;

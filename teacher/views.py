@@ -8,11 +8,12 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.db.models import Count, Q
+from django.db import transaction
+from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import TeacherApplicationForm, course_form
+from .forms import PLAYLIST_VIDEO_EXTENSIONS, PlaylistEntryForm, TeacherApplicationForm, course_form
 from .models import (
     Course,
     Lesson,
@@ -23,6 +24,7 @@ from .models import (
     TeacherApplication,
 )
 from accounts.models import User, ProfileImg
+from accounts.notifications import notify, notify_many
 from accounts.views import _profile_page_context
 from student.models import Comment, Enrollment, Like, QuizAttempt, StudentAnswer
 
@@ -149,20 +151,24 @@ def get_playlist_videos(request, course_id):
                 'quizzes': [],
             }, status=403)
 
-        playlists = Playlist.objects.filter(course=course).order_by('created_at')
+        can_manage = can_manage_playlist(request.user, course)
+        playlists = Playlist.objects.filter(course=course).order_by('order', 'created_at', 'id')
 
         videos = []
-        for playlist in playlists:
-            video_url = playlist.video.url if playlist.video else ''
-            video_name = (
-                os.path.basename(playlist.video.name)
-                if playlist.video else f'Video {playlist.id}'
-            )
-            videos.append({
+        for position, playlist in enumerate(playlists, start=1):
+            entry = {
                 'id': playlist.id,
-                'title': video_name,
-                'video_url': video_url,
-            })
+                'title': playlist.display_title,
+                'custom_title': playlist.title,
+                'description': playlist.description,
+                'position': position,
+                'file_name': os.path.basename(playlist.video.name) if playlist.video else '',
+                'video_url': playlist.video.url if playlist.video else '',
+            }
+            if can_manage:
+                entry['edit_url'] = reverse('edit_playlist_video', args=[course.id, playlist.id])
+                entry['delete_url'] = reverse('delete_playlist_video', args=[course.id, playlist.id])
+            videos.append(entry)
 
         quizzes_qs = Quiz.objects.filter(course=course)
         if not is_owner:
@@ -200,6 +206,7 @@ def get_playlist_videos(request, course_id):
             'course_title': course.title,
             'is_owner': is_owner,
             'can_upload': is_owner,
+            'can_manage': can_manage,
             'owner_name': (
                 f'{course.student.first_name} {course.student.last_name}'.strip()
                 or course.student.email
@@ -241,10 +248,7 @@ def add_playlist(request, course_id):
                 'error': 'No video file provided'
             }, status=400)
 
-        ALLOWED_VIDEO_EXT = (
-            '.mp4', '.webm', '.ogv', '.ogg', '.mov', '.mkv',
-            '.avi', '.wmv', '.flv', '.m4v', '.mpg', '.mpeg', '.3gp',
-        )
+        ALLOWED_VIDEO_EXT = PLAYLIST_VIDEO_EXTENSIONS
         name = (video_file.name or '').lower()
         ext_ok = name.endswith(ALLOWED_VIDEO_EXT)
         mime_ok = (video_file.content_type or '').startswith('video/')
@@ -254,12 +258,20 @@ def add_playlist(request, course_id):
                 'error': 'Unsupported video format. Allowed: ' + ', '.join(ALLOWED_VIDEO_EXT)
             }, status=400)
 
+        next_order = (course.playlists.aggregate(m=Max('order'))['m'] or 0) + 1
         playlist = Playlist.objects.create(
             course=course,
-            video=video_file
+            video=video_file,
+            order=max(next_order, course.playlists.count() + 1),
         )
 
-        video_name = os.path.basename(video_file.name)
+        video_name = playlist.display_title
+        if course.is_published:
+            notify_many(
+                User.objects.filter(enrollment__course=course).exclude(pk=course.student_id).distinct(),
+                f'New video added to "{course.title}": {video_name}',
+                link=reverse('user_profile'),
+            )
 
         return JsonResponse({
             'success': True,
@@ -276,6 +288,108 @@ def add_playlist(request, course_id):
             'success': False,
             'error': f'Error: {str(e)}'
         }, status=500)
+
+
+def can_manage_playlist(user, course):
+    """Only the course's teacher (owner) or a superuser may change its playlist."""
+    return user.is_authenticated and (course.student_id == user.id or user.is_superuser)
+
+
+def _playlist_entry(course_id, video_id):
+    """The entry must belong to the course in the URL, so an id from another
+    course can never be edited or deleted through this course."""
+    return get_object_or_404(
+        Playlist.objects.select_related('course'), id=video_id, course_id=course_id,
+    )
+
+
+def _renumber_playlist(course_id, moved=None, position=None):
+    entries = list(
+        Playlist.objects.filter(course_id=course_id).order_by('order', 'created_at', 'id')
+    )
+    if moved is not None and position is not None:
+        entries = [e for e in entries if e.pk != moved.pk]
+        index = max(0, min(position - 1, len(entries)))
+        entries.insert(index, moved)
+    for number, entry in enumerate(entries, start=1):
+        if entry.order != number:
+            Playlist.objects.filter(pk=entry.pk).update(order=number)
+            entry.order = number
+
+
+def _delete_unused_video_file(storage, name):
+    if not name or Playlist.objects.filter(video=name).exists():
+        return
+    try:
+        storage.delete(name)
+    except OSError:
+        pass
+
+
+def _playlist_forbidden(action):
+    return JsonResponse({
+        'success': False,
+        'error': f'You can only {action} videos in your own courses.',
+    }, status=403)
+
+
+@login_required
+@require_POST
+def edit_playlist_video(request, course_id, video_id):
+    entry = _playlist_entry(course_id, video_id)
+    if not can_manage_playlist(request.user, entry.course):
+        return _playlist_forbidden('edit')
+
+    old_name = entry.video.name
+    storage = entry.video.storage
+    form = PlaylistEntryForm(request.POST, request.FILES, instance=entry)
+    if not form.is_valid():
+        return JsonResponse({
+            'success': False,
+            'error': 'Please fix the errors below and try again.',
+            'errors': {field: [str(e) for e in errs] for field, errs in form.errors.items()},
+        }, status=400)
+
+    with transaction.atomic():
+        entry = form.save()
+        _renumber_playlist(entry.course_id, moved=entry, position=form.cleaned_data.get('position'))
+
+    if entry.video.name != old_name:
+        _delete_unused_video_file(storage, old_name)
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Video "{entry.display_title}" updated.',
+        'video': {
+            'id': entry.id,
+            'title': entry.display_title,
+            'description': entry.description,
+            'position': entry.order,
+            'video_url': entry.video.url if entry.video else '',
+        },
+    })
+
+
+@login_required
+@require_POST
+def delete_playlist_video(request, course_id, video_id):
+    entry = _playlist_entry(course_id, video_id)
+    if not can_manage_playlist(request.user, entry.course):
+        return _playlist_forbidden('delete')
+
+    title = entry.display_title
+    file_name = entry.video.name
+    storage = entry.video.storage
+    with transaction.atomic():
+        entry.delete()
+        _renumber_playlist(course_id)
+    _delete_unused_video_file(storage, file_name)
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Video "{title}" deleted.',
+        'remaining': Playlist.objects.filter(course_id=course_id).count(),
+    })
 
 
 @login_required
@@ -506,6 +620,12 @@ def grade_attempt(request, attempt_id):
     attempt.graded_by = request.user
     attempt.graded_at = timezone.now()
     attempt.save()
+    notify(
+        attempt.student,
+        f'Your quiz "{quiz_obj.title}" has been graded.',
+        link=reverse('quiz_result', kwargs={'attempt_id': attempt.id}),
+        kind='success',
+    )
 
     return JsonResponse({
         'status': 'success',

@@ -10,6 +10,8 @@ urlpatterns = [
     path('course/<int:course_id>/lessons/', views.course_lessons, name='course_lessons'),
     path('add_playlist/<int:course_id>/', views.add_playlist, name='add_playlist'),
     path('get_playlist_videos/<int:course_id>/', views.get_playlist_videos, name='get_playlist_videos'),
+    path('course/<int:course_id>/playlist/<int:video_id>/edit/', views.edit_playlist_video, name='edit_playlist_video'),
+    path('course/<int:course_id>/playlist/<int:video_id>/delete/', views.delete_playlist_video, name='delete_playlist_video'),
 
     # ============ TEACHER APPLICATION ============
     path('apply_teacher/', views.apply_teacher, name='apply_teacher'),

@@ -1234,6 +1234,121 @@ T = {
         'en': 'Download CSV', 'fa': 'دانلود CSV', 'ps': 'CSV ډاونلوډ',
     },
 
+    'loading': {
+        'en': 'Loading…',
+        'fa': 'در حال بارگذاری…',
+        'ps': 'پورته کېږي…',
+    },
+    'saving': {
+        'en': 'Saving…',
+        'fa': 'در حال ذخیره…',
+        'ps': 'خوندي کېږي…',
+    },
+    'deleting': {
+        'en': 'Deleting…',
+        'fa': 'در حال حذف…',
+        'ps': 'ړنګېږي…',
+    },
+    'mark_all_read': {
+        'en': 'Mark all as read',
+        'fa': 'همه خوانده شد',
+        'ps': 'ټول لوستل شوي',
+    },
+    'mark_read': {
+        'en': 'Mark as read',
+        'fa': 'علامت خوانده\u200cشده',
+        'ps': 'لوستل شوی وښیه',
+    },
+    'no_notifications': {
+        'en': "You're all caught up — no notifications yet.",
+        'fa': 'فعلاً اعلانی ندارید.',
+        'ps': 'تر اوسه کومه خبرتیا نشته.',
+    },
+    'notifications_error': {
+        'en': 'Could not load notifications. Please try again.',
+        'fa': 'بارگذاری اعلان\u200cها ممکن نشد. دوباره تلاش کنید.',
+        'ps': 'خبرتیاوې پورته نه شوې. بیا هڅه وکړئ.',
+    },
+    'unread': {
+        'en': 'Unread',
+        'fa': 'خوانده\u200cنشده',
+        'ps': 'نالوستل شوې',
+    },
+    'edit_profile': {
+        'en': 'Edit profile',
+        'fa': 'ویرایش پروفایل',
+        'ps': 'پروفایل سمول',
+    },
+    'profile_picture': {
+        'en': 'Profile picture',
+        'fa': 'عکس پروفایل',
+        'ps': 'د پروفایل انځور',
+    },
+    'profile_picture_hint': {
+        'en': 'JPG, PNG, GIF or WEBP, up to 5 MB. Leave empty to keep the current picture.',
+        'fa': 'JPG، PNG، GIF یا WEBP تا ۵ مگابایت. برای حفظ عکس فعلی خالی بگذارید.',
+        'ps': 'JPG، PNG، GIF یا WEBP تر ۵ MB پورې. د اوسني انځور ساتلو لپاره یې خالي پرېږدئ.',
+    },
+    'email_login_hint': {
+        'en': 'You sign in with this email address.',
+        'fa': 'با این ایمیل وارد حساب می\u200cشوید.',
+        'ps': 'تاسو په دې برېښنالیک ننوځئ.',
+    },
+    'edit_video': {
+        'en': 'Edit video',
+        'fa': 'ویرایش ویدیو',
+        'ps': 'ویډیو سمول',
+    },
+    'delete_video': {
+        'en': 'Delete video',
+        'fa': 'حذف ویدیو',
+        'ps': 'ویډیو ړنګول',
+    },
+    'video_title': {
+        'en': 'Video title',
+        'fa': 'عنوان ویدیو',
+        'ps': 'د ویډیو سرلیک',
+    },
+    'video_title_hint': {
+        'en': 'Leave empty to show the file name.',
+        'fa': 'برای نمایش نام فایل خالی بگذارید.',
+        'ps': 'د فایل نوم ښودلو لپاره یې خالي پرېږدئ.',
+    },
+    'playlist_position': {
+        'en': 'Position in playlist',
+        'fa': 'جایگاه در فهرست پخش',
+        'ps': 'په لړۍ کې ځای',
+    },
+    'replace_video': {
+        'en': 'Replace video file (optional)',
+        'fa': 'جایگزینی فایل ویدیو (اختیاری)',
+        'ps': 'د ویډیو فایل بدلول (اختیاري)',
+    },
+    'delete_video_confirm': {
+        'en': 'This permanently removes the video from this course playlist. Other courses are not affected.',
+        'fa': 'این ویدیو برای همیشه از فهرست پخش این دوره حذف می\u200cشود. دوره\u200cهای دیگر تغییری نمی\u200cکنند.',
+        'ps': 'دا ویډیو د تل لپاره د دې کورس له لړۍ څخه ړنګېږي. نور کورسونه نه اغېزمن کېږي.',
+    },
+    'delete_account_blocked': {
+        'en': 'Account deletion is currently unavailable:',
+        'fa': 'حذف حساب در حال حاضر ممکن نیست:',
+        'ps': 'د حساب ړنګول اوس ممکن نه دي:',
+    },
+    'delete_account_password_label': {
+        'en': 'Type your current password to confirm',
+        'fa': 'برای تأیید، رمز فعلی خود را وارد کنید',
+        'ps': 'د تایید لپاره خپل اوسنی پاسورډ ولیکئ',
+    },
+    'enter_your_password': {
+        'en': 'Enter your current password',
+        'fa': 'رمز عبور فعلی خود را وارد کنید',
+        'ps': 'خپل اوسنی پاسورډ ولیکئ',
+    },
+    'permanently_delete': {
+        'en': 'Permanently delete',
+        'fa': 'حذف دائمی',
+        'ps': 'د تل لپاره ړنګول',
+    },
 }
 
 
