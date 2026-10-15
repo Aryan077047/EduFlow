@@ -37,17 +37,18 @@
     <!-- Page-specific CSS -->
     <link href="{% static 'css/pages/login.css' %}" rel="stylesheet" />
 </head>
+<style>
+    :root { --login-bg-image: none; }
+    :root { --login-bg-image: url("{% static 'dist-assets/images/photo-long-3.jpg' %}"); }
+</style>
 <body>
 
-    <div class="login-card">
+    <div class="login-card auth-card">
 
         <!-- ====================== LEFT ====================== -->
         <div class="login-left">
             <a href="{% url 'index' %}" class="brand">
-                <div class="logo-mark">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <h2 class="logo-text">Edu<span>Flow</span></h2>
+                {% include 'brand.html' %}
             </a>
 
             <h3 class="left-title">{{ t.welcome_back }}</h3>
@@ -108,61 +109,5 @@
 </body>
 
 <!-- Theme Toggle Script -->
-<script>
-(function () {
-    'use strict';
-
-    function updateThemeIcon() {
-        const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme');
-        const icon = document.querySelector('.left-title i');
-        if (icon) {
-            icon.className = currentTheme === 'dark' ? 'fa fa-sun' : 'fa fa-graduation-cap';
-        }
-    }
-
-    // Add theme toggle button to left panel
-    const leftPanel = document.querySelector('.login-left');
-    if (leftPanel) {
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'theme-toggle-btn';
-        toggleBtn.innerHTML = '<i class="fa fa-moon"></i>';
-        toggleBtn.title = 'Toggle theme';
-        toggleBtn.style.cssText = `
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, .15);
-            border: 1px solid rgba(255, 255, 255, .25);
-            color: white;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .3s ease;
-            z-index: 10;
-        `;
-        toggleBtn.addEventListener('mouseenter', function() {
-            this.style.background = 'rgba(255, 255, 255, .25)';
-        });
-        toggleBtn.addEventListener('mouseleave', function() {
-            this.style.background = 'rgba(255, 255, 255, .15)';
-        });
-        toggleBtn.addEventListener('click', function() {
-            const html = document.documentElement;
-            const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-theme', next);
-            try { localStorage.setItem('theme', next); } catch (e) {}
-            this.querySelector('i').className = next === 'dark' ? 'fa fa-sun' : 'fa fa-moon';
-        });
-        leftPanel.appendChild(toggleBtn);
-    }
-
-    updateThemeIcon();
-})();
-</script>
+<script src="{% static 'js/pages/login.js' %}"></script>
 </html>

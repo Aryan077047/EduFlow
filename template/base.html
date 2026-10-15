@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ lang|default:'en' }}" dir="{{ lang_dir|default:'ltr' }}">
-
+{% load static %}
 {% include 'head.html' %}
 
 <body class="text-{{ lang_dir|default:'ltr' }}">
@@ -17,18 +17,17 @@
         {% include 'footer.html' %}
     {% endblock %}
 
-    <!-- Bootstrap 5.3 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- Confirmation Modal (included on all pages) -->
+    {% include 'confirm_modal.html' %}
 
+    <!-- Confirmation Modal CSS -->
+    <link rel="stylesheet" href="{% static 'css/components/confirm_modal.css' %}">
 
     <!-- Page-specific CSS -->
     {% block extra_css %}{% endblock %}
 
-    <!-- Bootstrap 5.3 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Common JS -->
+    <!-- Confirmation Modal JS -->
+    <script src="{% static 'js/confirm_modal.js' %}"></script>
 
     <!-- Page-specific JS -->
     {% block extra_js %}{% endblock %}

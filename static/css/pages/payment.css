@@ -1,0 +1,8 @@
+/* Shared dark-mode overrides for payment result pages (payment_success/payment_failure). */
+
+[data-theme="dark"] h1 {
+    color: #e4ede6 !important;
+}
+[data-theme="dark"] p {
+    color: #93a397 !important;
+}

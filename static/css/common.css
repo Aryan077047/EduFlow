@@ -1,0 +1,80 @@
+/* ============================================================
+   COMMON CSS - Basic styles for all pages
+============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary-dark: #18311f;
+    --text-light: #7d8f82;
+    --bg-light: #f4f7f1;
+    --green-1: #5d9c59;
+    --green-2: #7fbf5b;
+    --green-3: #2f5233;
+    --green-4: #a3e635;
+    --red-1: #dc2626;
+    --red-2: #d62839;
+    --gold-1: #eab308;
+    --gold-2: #ca8a04;
+    --blue-1: #3b82f6;
+    --purple-1: #8b5cf6;
+}
+
+[data-theme="dark"] {
+    --primary-dark: #e4ede6;
+    --text-light: #93a397;
+    --bg-light: #0d1510;
+    --green-1: #6fb56a;
+    --green-2: #a3e635;
+    --green-3: #4a7a52;
+    --green-4: #a3e635;
+    --red-1: #ef4444;
+    --red-2: #ef4444;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    background: var(--bg-light);
+    color: var(--primary-dark);
+}
+
+/* RTL font support */
+[dir="rtl"] body,
+[dir="rtl"] input,
+[dir="rtl"] button,
+[dir="rtl"] a,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] span,
+[dir="rtl"] label,
+[dir="rtl"] small,
+[dir="rtl"] strong,
+[dir="rtl"] th,
+[dir="rtl"] td,
+[dir="rtl"] p {
+    font-family: 'Noto Naskh Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
+[dir="rtl"] input::placeholder {
+    direction: ltr;
+    text-align: right;
+}
+
+/* Dark mode body override */
+[data-theme="dark"] body {
+    background: #0d1510 !important;
+    color: #e4ede6 !important;
+}
+
+/* 🛡️ GPU safety — disable blur in dark mode */
+[data-theme="dark"] * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}

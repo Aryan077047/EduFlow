@@ -1,0 +1,243 @@
+/* ============================================================
+   CONFIRMATION MODAL - Reusable styled confirm dialog
+   Uses project green theme CSS variables
+============================================================ */
+
+:root {
+  --primary: #18311f;
+  --secondary: #5d9c59;
+  --secondary-dark: #2f5233;
+  --light: #f5f8f4;
+  --text: #6c7d70;
+  --border: #dce8d8;
+  --danger: #dc2626;
+  --warning: #eab308;
+  --info: #3b82f6;
+  --card: #ffffff;
+  --hover: #f8faf7;
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-md: 0 12px 30px rgba(0,0,0,0.08);
+  --transition: 0.25s ease;
+}
+
+[data-theme="dark"] {
+  --primary: #e4ede6;
+  --secondary: #6fb56a;
+  --secondary-dark: #4a7a52;
+  --light: #0d1510;
+  --text: #93a397;
+  --border: #2f4638;
+  --danger: #ef4444;
+  --warning: #facc15;
+  --info: #60a5fa;
+  --card: #16201a;
+  --hover: #1b2620;
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.2);
+  --shadow-md: 0 12px 30px rgba(0,0,0,0.3);
+}
+
+/* Modal Overlay */
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition), visibility var(--transition);
+  padding: 1rem;
+}
+
+.confirm-modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Modal Container.
+   The modal pins its own --danger: pages restyle --danger in dark mode for
+   small text/icons (e.g. #fca5a5), which would make a solid .btn-danger
+   background nearly invisible. A solid red button must stay solid. */
+.confirm-modal {
+  background: var(--card);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  max-width: 420px;
+  width: 100%;
+  transform: scale(0.92) translateY(12px);
+  transition: transform var(--transition);
+  overflow: hidden;
+}
+
+.confirm-modal-overlay.show .confirm-modal {
+  transform: scale(1) translateY(0);
+}
+
+/* Modal Header */
+.confirm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.confirm-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+
+.confirm-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition);
+  line-height: 1;
+}
+
+.confirm-modal-close:hover {
+  background: var(--hover);
+  color: var(--primary);
+}
+
+/* Modal Body */
+.confirm-modal-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.confirm-modal-message {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Modal Footer */
+.confirm-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Buttons */
+.confirm-modal-footer .btn {
+  padding: 0.625rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all var(--transition);
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 90px;
+}
+
+.confirm-modal-footer .btn-secondary {
+  background: var(--light);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.confirm-modal-footer .btn-secondary:hover {
+  background: var(--hover);
+  color: var(--primary);
+  border-color: var(--secondary);
+}
+
+.confirm-modal-footer .btn-danger {
+  background: #dc2626;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.confirm-modal-footer .btn-danger:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .confirm-modal-footer .btn-danger {
+  background: #ef4444;
+}
+
+[data-theme="dark"] .confirm-modal-footer .btn-danger:hover {
+  background: #dc2626;
+}
+
+.confirm-modal-footer .btn-danger:active {
+  transform: translateY(0);
+}
+
+/* Focus states for accessibility */
+.confirm-modal-footer .btn:focus-visible,
+.confirm-modal-close:focus-visible {
+  outline: 2px solid var(--secondary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .confirm-modal-overlay,
+  .confirm-modal,
+  .confirm-modal-close,
+  .confirm-modal-footer .btn {
+    transition: none !important;
+  }
+  .confirm-modal {
+    transform: none !important;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .confirm-modal {
+    max-width: 100%;
+    margin: 0.5rem;
+    border-radius: 12px;
+  }
+  .confirm-modal-header,
+  .confirm-modal-body,
+  .confirm-modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .confirm-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .confirm-modal-footer .btn {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .confirm-modal {
+    border-width: 2px;
+  }
+  .confirm-modal-footer .btn-secondary {
+    border-width: 2px;
+  }
+}

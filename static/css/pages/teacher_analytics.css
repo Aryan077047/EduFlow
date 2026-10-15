@@ -1,0 +1,191 @@
+/* ==== extracted from template teacher_analytics.html ==== */
+
+:root {
+    --primary-dark:#18311f;
+    --text-light:#7d8f82;
+    --bg-light:#f4f7f1;
+    --green-1:#5d9c59;
+    --green-2:#7fbf5b;
+    --green-3:#2f5233;
+    --green-4:#a3e635;
+    --red-1:#dc2626;
+
+    --card:#ffffff;
+    --line:#e5ede2;
+    --line-soft:#eef3ec;
+    --ok-bg:#eef5ec;
+    --ok-fg:#2f5233;
+    --bad-bg:#fdecea;
+    --bad-fg:#b71c1c;
+}
+[data-theme="dark"] {
+    --primary-dark:#e8f2e6;
+    --text-light:#9db3a1;
+    --bg-light:#101912;
+    --green-1:#6fb56a;
+    --green-2:#8ecf6a;
+    --green-3:#4a7a52;
+    --green-4:#b4ef56;
+    --red-1:#ff6b6b;
+
+    --card:#18241a;
+    --line:#24352a;
+    --line-soft:#1c2a20;
+    --ok-bg:#223528;
+    --ok-fg:#9fd49f;
+    --bad-bg:#3a2323;
+    --bad-fg:#ff8a80;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family:'Plus Jakarta Sans', sans-serif;
+    background:var(--bg-light);
+    color:var(--primary-dark);
+    padding:2rem;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+}
+.page { max-width:1200px; margin:auto; }
+
+/* ================= HEADER ================= */
+.top { display:flex; align-items:center; gap:1rem; margin-bottom:1.6rem; flex-wrap:wrap; }
+.back-btn {
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+    color:var(--text-light); font-size:.85rem; font-weight:600;
+    padding:.5rem 1rem; border-radius:999px;
+    background:var(--card); border:1px solid var(--line);
+    transition:.2s;
+}
+.back-btn:hover { background:var(--green-1); color:#fff; border-color:var(--green-1); }
+.top h1 { font-size:1.5rem; font-weight:800; }
+.top .sub { font-size:.8rem; color:var(--text-light); }
+.top .spacer { flex:1; }
+
+.export-btn {
+    display:inline-flex; align-items:center; gap:.5rem; text-decoration:none;
+    background:linear-gradient(135deg, var(--green-1), var(--green-3));
+    color:#fff; font-weight:700; font-size:.85rem;
+    padding:.7rem 1.2rem; border-radius:12px;
+    transition:.2s; border:none;
+}
+.export-btn:hover { transform:translateY(-2px); box-shadow:0 10px 25px rgba(77,139,49,.35); }
+
+/* ================= KPI ================= */
+.kpis {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+    gap:.9rem; margin-bottom:1.4rem;
+}
+.kpi {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:1rem 1.1rem;
+}
+.kpi .num { font-size:1.5rem; font-weight:800; }
+.kpi .lbl {
+    font-size:.7rem; font-weight:700; color:var(--text-light);
+    text-transform:uppercase; letter-spacing:.04em; margin-top:.15rem;
+}
+.kpi .delta { font-size:.68rem; font-weight:700; margin-top:.3rem; }
+.kpi .delta.up { color:var(--ok-fg); }
+.kpi .delta.down { color:var(--bad-fg); }
+.kpi .delta.muted { color:var(--text-light); }
+
+/* ================= CARDS ================= */
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-bottom:1.4rem; }
+@media (max-width:900px){ .grid2 { grid-template-columns:1fr; } }
+
+.card {
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:1.3rem 1.4rem;
+}
+.card h2 {
+    font-size:.95rem; font-weight:800; margin-bottom:1rem;
+    display:flex; align-items:center; gap:.4rem;
+}
+.card h2 i { color:var(--green-1); }
+
+/* ================= TABLE ================= */
+table { width:100%; border-collapse:collapse; font-size:.8rem; }
+th {
+    text-align:left; font-size:.66rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--text-light);
+    padding:.5rem .6rem; border-bottom:2px solid var(--line);
+}
+td { padding:.55rem .6rem; border-bottom:1px solid var(--line-soft); }
+tr:last-child td { border-bottom:none; }
+table tr:hover td { background:var(--bg-light); }
+.muted { color:var(--text-light); }
+
+/* ================= BADGE ================= */
+.badge {
+    display:inline-block; font-size:.64rem; font-weight:700;
+    padding:.18rem .55rem; border-radius:999px;
+    background:var(--ok-bg); color:var(--ok-fg);
+}
+.badge.no { background:var(--bad-bg); color:var(--bad-fg); }
+
+/* ================= PROGRESS BARS ================= */
+.bars { display:flex; flex-direction:column; gap:.55rem; }
+.bar-row {
+    display:grid; grid-template-columns:130px 1fr 42px;
+    align-items:center; gap:.6rem; font-size:.76rem;
+}
+.bar-row > span:first-child { color:var(--text-light); }
+.bar-track {
+    background:var(--bg-light);
+    border:1px solid var(--line);
+    border-radius:999px; height:12px; overflow:hidden;
+}
+.bar-fill {
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--green-2), var(--green-1));
+    transition:width .6s ease;
+}
+.bar-num { text-align:right; font-weight:700; }
+
+/* ================= ACTIVITY CHART ================= */
+.activity-chart {
+    display:flex; align-items:flex-end; gap:6px;
+    height:150px; padding-top:.5rem;
+}
+.ac-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.ac-bars {
+    display:flex; align-items:flex-end; gap:2px;
+    height:110px; width:100%; justify-content:center;
+}
+.ac-bar {
+    width:9px; border-radius:3px 3px 0 0;
+    background:var(--green-2); min-height:2px; max-height:100%;
+}
+.ac-bar.b2 { background:var(--green-1); }
+.ac-bar.b3 { background:var(--green-3); }
+.ac-day { font-size:.6rem; color:var(--text-light); }
+.ac-total { font-size:.62rem; font-weight:700; }
+
+.legend {
+    display:flex; gap:1rem; flex-wrap:wrap;
+    font-size:.68rem; color:var(--text-light); margin-top:.7rem;
+}
+.legend span { display:inline-flex; align-items:center; gap:.3rem; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:3px; }
+
+/* ================= BIG NUMBERS ================= */
+.stat-row {
+    display:flex; gap:2rem; align-items:center;
+    flex-wrap:wrap; margin-bottom:1rem;
+}
+.big-num { font-size:2rem; font-weight:800; }
+.big-num.ok { color:var(--green-1); }
+.big-num.bad { color:var(--red-1); }
+.pct-ring { font-size:.78rem; color:var(--text-light); }
+
+/* ================= FOOTER ================= */
+footer.note {
+    text-align:center; font-size:.7rem;
+    color:var(--text-light); margin-top:1.5rem;
+}

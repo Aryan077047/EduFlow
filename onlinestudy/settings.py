@@ -48,7 +48,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'admmitions',
+    'accounts',
+    'teacher',
+    'student',
+    'adminpanel',
     'hesabpay',
 ]
 
@@ -82,7 +85,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'onlinestudy.wsgi.application'
 
-AUTH_USER_MODEL = 'admmitions.User'
+AUTH_USER_MODEL = 'accounts.User'
 
 # Where @login_required sends signed-out users. Defaults to /accounts/login/,
 # which this project does not serve - point it at the real login view.
@@ -229,5 +232,5 @@ HESABPAY = {
     "PUBLIC_BASE_URL": os.environ.get("PUBLIC_BASE_URL", "http://localhost:8000"),
     "SUCCESS_URL": "/payments/success/",
     "FAILURE_URL": "/payments/failure/",
-    "HANDLERS": ["admmitions.payments"],
+    "HANDLERS": ["student.payments"],
 }

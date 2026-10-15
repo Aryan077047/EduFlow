@@ -5,297 +5,150 @@
 {% block footer %}{% endblock %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link href="{% static 'css/common.css' %}" rel="stylesheet" />
-<style>
+<link href="{% static 'css/pages/ai_assistant.css' %}" rel="stylesheet" />
 
-.ai-layout-wrap {
-    min-height:calc(100vh - 120px);
-    display:flex; align-items:center; justify-content:center;
-    padding:30px 15px; animation:fadeInUp .8s ease forwards;
-}
-@keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+<div class="ai-shell"
+     data-conversation-id="{% if current_conversation %}{{ current_conversation.id }}{% endif %}">
 
-.ai-card {
-    width:100%; max-width:760px; background:#fff; border-radius:24px;
-    box-shadow:0 20px 60px rgba(0,0,0,.12); overflow:hidden;
-    display:flex; flex-direction:column; height:78vh; min-height:520px;
-}
-.ai-head {
-    background:linear-gradient(135deg,#5d9c59,#3d7a47); color:#fff;
-    padding:1.1rem 1.6rem; display:flex; align-items:center; gap:.9rem;
-}
-.ai-head .ai-icon {
-    width:46px; height:46px; border-radius:14px; background:rgba(255,255,255,.18);
-    display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex:none;
-}
-.ai-head h1 { font-size:1.15rem; font-weight:700; }
-.ai-head p { font-size:.78rem; opacity:.9; }
-.ai-head .spacer { flex:1; }
-.ai-clear {
-    border:none; background:rgba(255,255,255,.15); color:#fff; cursor:pointer;
-    font-family:inherit; font-weight:600; font-size:.75rem;
-    padding:.5rem .9rem; border-radius:10px; transition:.2s; flex:none;
-}
-.ai-clear:hover { background:rgba(255,255,255,.3); }
-
-.ai-body { flex:1; overflow-y:auto; padding:1.4rem 1.6rem; background:#fafcf8; }
-.msg { display:flex; margin-bottom:1rem; }
-.msg.user { justify-content:flex-end; }
-.bubble {
-    max-width:78%; padding:.8rem 1rem; border-radius:16px;
-    font-size:.9rem; line-height:1.55; white-space:pre-wrap; word-wrap:break-word;
-}
-.msg.user .bubble { background:linear-gradient(135deg,#5d9c59,#3d7a47); color:#fff; border-bottom-right-radius:5px; }
-.msg.assistant .bubble { background:#fff; border:1.5px solid #e3e8e3; color:#2d3a33; border-bottom-left-radius:5px; }
-.msg .avatar {
-    width:34px; height:34px; border-radius:50%; flex:none; display:flex;
-    align-items:center; justify-content:center; font-size:.8rem; margin:0 .55rem;
-}
-.msg.assistant .avatar { background:#eef5ec; color:#3d7a47; }
-.msg.user .avatar { background:#dcead8; color:#2d5a2a; order:2; }
-
-.ai-empty {
-    text-align:center; color:#7a887f; font-size:.86rem; padding:2.2rem 1rem; line-height:1.7;
-}
-.ai-empty i { font-size:2rem; color:#a9c3a4; display:block; margin-bottom:.7rem; }
-
-.ai-status { margin:0 1.6rem .8rem; }
-.alert {
-    border-radius:12px; padding:.7rem .9rem; font-size:.78rem; font-weight:600;
-    line-height:1.55; display:flex; gap:.6rem; align-items:flex-start;
-}
-.alert-warn { background:#fef7ec; color:#92600a; border:1px solid #f3e2c2; }
-.alert-error { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
-
-.ai-footer { border-top:1.5px solid #eef2ee; padding:1rem 1.6rem 1.2rem; background:#fff; }
-.course-pick { display:flex; align-items:center; gap:.5rem; margin-bottom:.7rem; }
-.course-pick label { font-size:.72rem; font-weight:700; color:#5d6b62; }
-.course-pick select {
-    font-family:inherit; font-size:.78rem; color:#2d3a33;
-    border:1.5px solid #e3e8e3; border-radius:10px; padding:.35rem .5rem; background:#fbfdfb;
-}
-.ask-row { display:flex; gap:.6rem; }
-.ask-row textarea {
-    flex:1; resize:none; border:1.5px solid #e3e8e3; border-radius:12px;
-    padding:.75rem .9rem; font-size:.9rem; font-family:inherit; background:#fbfdfb;
-    min-height:48px; max-height:120px; line-height:1.45;
-}
-.ask-row textarea:focus { border-color:#7fbf5b; box-shadow:0 0 0 4px rgba(127,191,91,.15); outline:none; }
-.btn-send {
-    border:none; cursor:pointer; color:#fff; font-weight:700; font-size:.9rem;
-    padding:0 1.4rem; border-radius:12px; font-family:inherit;
-    background:linear-gradient(135deg,#5d9c59,#3d7a47); transition:.25s;
-    display:flex; align-items:center; gap:.45rem; flex:none;
-}
-.btn-send:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 10px 25px rgba(77,139,49,.35); }
-.btn-send:disabled { opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
-.hint-row { margin-top:.55rem; font-size:.7rem; color:#7a887f; display:flex; justify-content:space-between; }
-
-.typing { display:inline-flex; gap:5px; padding:.35rem 0; }
-.typing span { width:7px; height:7px; border-radius:50%; background:#9db89b; animation:blink 1.2s infinite; }
-.typing span:nth-child(2) { animation-delay:.2s; }
-.typing span:nth-child(3) { animation-delay:.4s; }
-@keyframes blink { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }
-</style>
-
-<div class="ai-layout-wrap">
-<div class="ai-card">
-
-  <div class="ai-head">
-    <div class="ai-icon"><i class="fa-solid fa-robot"></i></div>
-    <div>
-      <h1>{{ t.ai_assistant }}</h1>
-      <p>{{ t.ai_subtitle }}</p>
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="ai-sidebar" id="aiSidebar">
+    <div class="ai-sidebar-top">
+      <a href="{% url 'index' %}" class="ai-back" title="Back to home">
+        <i class="fa fa-arrow-left"></i>
+      </a>
+      <span class="ai-sidebar-title">{{ t.ai_assistant }}</span>
     </div>
-    <div class="spacer"></div>
-    <button type="button" class="ai-clear" id="clearChatBtn" title="Delete the whole conversation">
-      <i class="fa-solid fa-trash-can"></i> {{ t.clear_chat }}
-    </button>
-  </div>
 
-  <div class="ai-body" id="chatBody">
-    {% if history %}
-      {% for m in history %}
-      <div class="msg {{ m.role }}">
-        <div class="avatar"><i class="fa-solid {% if m.role == 'assistant' %}fa-robot{% else %}fa-user{% endif %}"></i></div>
-        <div class="bubble">{{ m.content }}</div>
-      </div>
-      {% endfor %}
-    {% else %}
-      <div class="ai-empty">
-        <i class="fa-solid fa-graduation-cap"></i>
-        {% if request.user.role == 'teacher' %}
-        Ask me to draft quiz questions, explain a topic for your lesson, or build a study plan for your students.
-        {% else %}
-        Ask me to explain a lesson, summarize a topic, or build a study plan for your course.
-        {% endif %}
-      </div>
-    {% endif %}
-  </div>
+    <a href="{% url 'ai_assistant' %}?new=1" class="ai-new-chat">
+      <i class="fa fa-plus"></i> {{ t.new_chat_word|default:"New chat" }}
+    </a>
 
-  <div class="ai-status" id="aiStatus" hidden></div>
-
-  {% if not ai_enabled %}
-  <div class="ai-status">
-    <div class="alert alert-warn">
-      <i class="fa-solid fa-plug-circle-exclamation"></i>
-      <span>
-        AI is not configured yet. Get an API key at <strong>platform.deepseek.com</strong>,
-        then add <code>DEEPSEEK_API_KEY = 'your-key'</code> to
-        <code>onlinestudy/email_settings_local.py</code> and restart the server.
-      </span>
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="ai-footer">
-    {% csrf_token %}
-    {% if my_courses %}
-    <div class="course-pick">
-      <label for="courseSelect"><i class="fa-solid fa-book"></i> {{ t.about_course }}</label>
-      <select id="courseSelect">
-        <option value="">{{ t.any_topic }}</option>
-        {% for c in my_courses %}
-        <option value="{{ c.id }}">{{ c.title }}</option>
+    <div class="ai-chat-list" id="chatList">
+      {% if conversations %}
+        {% for conv in conversations %}
+        <div class="ai-chat-item {% if current_conversation == conv %}active{% endif %}"
+             data-id="{{ conv.id }}">
+          <a href="{% url 'ai_assistant' %}?c={{ conv.id }}" class="ai-chat-link" title="{{ conv.title }}">
+            <i class="fa fa-comment-dots"></i>
+            <span class="ai-chat-name">{{ conv.title }}</span>
+          </a>
+          <button type="button" class="ai-chat-del" title="Delete chat" data-id="{{ conv.id }}">
+            <i class="fa fa-trash-can"></i>
+          </button>
+        </div>
         {% endfor %}
-      </select>
+      {% else %}
+        <div class="ai-chat-empty">No chats yet.<br>Your conversations will appear here.</div>
+      {% endif %}
     </div>
-    {% endif %}
-    <div class="ask-row">
-      <textarea id="questionInput" rows="1" maxlength="2000"
-        placeholder="{% if request.user.role == 'teacher' %}e.g. Draft 5 quiz questions about Python loops{% else %}e.g. Explain recursion like I'm 10{% endif %}"></textarea>
-      <button type="button" class="btn-send" id="sendBtn">
-        <i class="fa-solid fa-paper-plane"></i> {{ t.ask }}
+
+    <div class="ai-sidebar-bottom">
+      <i class="fa fa-user"></i>
+      <span class="ai-user-mail">{{ request.user.email }}</span>
+    </div>
+  </aside>
+
+  <!-- ==================== CHAT PANE ==================== -->
+  <section class="ai-chat-pane">
+
+    <div class="ai-head">
+      <button type="button" class="ai-burger" id="sidebarToggle" title="Chats">
+        <i class="fa fa-bars"></i>
+      </button>
+      <div class="ai-head-title">
+        {% if fresh %}
+          <h1>{{ t.new_chat_word|default:"New chat" }}</h1>
+        {% elif current_conversation %}
+          <h1>{{ current_conversation.title }}</h1>
+        {% else %}
+          <h1>{{ t.ai_assistant }}</h1>
+        {% endif %}
+        <p>
+          {% if request.user.role == 'teacher' %}{{ t.ai_subtitle_teacher|default:"Quiz drafting, lesson ideas and study plans." }}
+          {% else %}{{ t.ai_subtitle }}{% endif %}
+        </p>
+      </div>
+      <div class="spacer"></div>
+      <button type="button" class="ai-clear" id="clearChatBtn" title="Delete this conversation">
+        <i class="fa-solid fa-trash-can"></i> {{ t.clear_chat }}
       </button>
     </div>
-    <div class="hint-row">
-      <span>{{ t.enter_to_send }}</span>
-      <span id="charCount">0 / 2000</span>
+
+    <div class="ai-body" id="chatBody">
+      {% if history %}
+        {% for m in history %}
+        <div class="msg {{ m.role }}">
+          <div class="avatar"><i class="fa-solid {% if m.role == 'assistant' %}fa-robot{% else %}fa-user{% endif %}"></i></div>
+          <div class="bubble">{{ m.content }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="ai-empty">
+          <i class="fa-solid fa-graduation-cap"></i>
+          {% if request.user.role == 'teacher' %}
+          Ask me to draft quiz questions, explain a topic for your lesson, or build a study plan for your students.
+          {% else %}
+          Ask me to explain a lesson, summarize a topic, or build a study plan for your course.
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
-  </div>
 
-</div>
+    <div class="ai-status" id="aiStatus" hidden></div>
+
+    {% if not ai_enabled %}
+    <div class="ai-status">
+      <div class="alert alert-warn">
+        <i class="fa-solid fa-plug-circle-exclamation"></i>
+        <span>
+          AI is not configured yet. Get an API key at <strong>platform.deepseek.com</strong>,
+          then add <code>DEEPSEEK_API_KEY = 'your-key'</code> to
+          <code>onlinestudy/email_settings_local.py</code> and restart the server.
+        </span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="ai-footer">
+      {% csrf_token %}
+      {% if my_courses %}
+      <div class="course-pick">
+        <label for="courseSelect"><i class="fa-solid fa-book"></i> {{ t.about_course }}</label>
+        <select id="courseSelect">
+          <option value="">{{ t.any_topic }}</option>
+          {% for c in my_courses %}
+          <option value="{{ c.id }}">{{ c.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="ask-row">
+        <textarea id="questionInput" rows="1" maxlength="2000"
+          placeholder="{% if request.user.role == 'teacher' %}e.g. Draft 5 quiz questions about Python loops{% else %}e.g. Explain recursion like I'm 10{% endif %}"></textarea>
+        <button type="button" class="btn-send" id="sendBtn">
+          <i class="fa-solid fa-paper-plane"></i> {{ t.ask }}
+        </button>
+      </div>
+      <div class="hint-row">
+        <span>{{ t.enter_to_send }}</span>
+        <span id="charCount">0 / 2000</span>
+      </div>
+    </div>
+
+  </section>
 </div>
 
+{% url 'ask_ai' as ai_ask_url %}
+{% url 'clear_ai_chat' as ai_clear_url %}
+{% url 'delete_ai_conversation' as ai_del_url %}
+{% url 'ai_assistant' as ai_page_url %}
 <script>
-(function () {
-  'use strict';
-
-  const chatBody = document.getElementById('chatBody');
-  const input = document.getElementById('questionInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const clearBtn = document.getElementById('clearChatBtn');
-  const statusBox = document.getElementById('aiStatus');
-  const courseSelect = document.getElementById('courseSelect');
-  const charCount = document.getElementById('charCount');
-  const csrf = document.querySelector('[name=csrfmiddlewaretoken]') ||
-               document.cookie.match(/csrftoken=([^;]+)/) && { value: decodeURIComponent(RegExp.$1) };
-
-  function esc(s) {
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-  }
-
-  function addMessage(role, text) {
-    const wrap = document.createElement('div');
-    wrap.className = 'msg ' + role;
-    const icon = role === 'assistant' ? 'fa-robot' : 'fa-user';
-    wrap.innerHTML =
-      '<div class="avatar"><i class="fa-solid ' + icon + '"></i></div>' +
-      '<div class="bubble"></div>';
-    wrap.querySelector('.bubble').textContent = text;
-    chatBody.appendChild(wrap);
-    chatBody.scrollTop = chatBody.scrollHeight;
-    return wrap;
-  }
-
-  function showStatus(kind, html) {
-    statusBox.hidden = false;
-    statusBox.innerHTML = '<div class="alert alert-' + kind + '">' +
-      '<i class="fa-solid ' + (kind === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info') + '"></i>' +
-      '<span>' + html + '</span></div>';
-  }
-
-  function hideStatus() { statusBox.hidden = true; statusBox.innerHTML = ''; }
-
-  function csrfToken() {
-    const el = document.querySelector('input[name=csrfmiddlewaretoken]');
-    if (el) return el.value;
-    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
-    return m ? decodeURIComponent(m[1]) : '';
-  }
-
-  async function ask() {
-    const question = input.value.trim();
-    if (!question || sendBtn.disabled) return;
-
-    addMessage('user', question);
-    input.value = '';
-    charCount.textContent = '0 / 2000';
-    hideStatus();
-    sendBtn.disabled = true;
-    const typing = addMessage('assistant', '');
-    typing.querySelector('.bubble').innerHTML =
-      '<span class="typing"><span></span><span></span><span></span></span>';
-    chatBody.scrollTop = chatBody.scrollHeight;
-
-    try {
-      const response = await fetch('{% url 'ask_ai' %}', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken(),
-        },
-        body: JSON.stringify({
-          question: question,
-          course_id: courseSelect ? courseSelect.value : null,
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-
-      if (payload.success) {
-        typing.querySelector('.bubble').textContent = payload.reply;
-        chatBody.scrollTop = chatBody.scrollHeight;
-      } else {
-        typing.remove();
-        showStatus('error', esc(payload.error || 'Something went wrong. Please try again.'));
-        input.value = question;
-      }
-    } catch (err) {
-      typing.remove();
-      showStatus('error', 'Could not reach the server. Check your connection and try again.');
-      input.value = question;
-    } finally {
-      sendBtn.disabled = false;
-      input.focus();
-    }
-  }
-
-  sendBtn.addEventListener('click', ask);
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      ask();
-    }
-  });
-  input.addEventListener('input', function () {
-    charCount.textContent = input.value.length + ' / 2000';
-  });
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', async function () {
-      if (!confirm('Delete the whole conversation? This cannot be undone.')) return;
-      try {
-        await fetch('{% url 'clear_ai_chat' %}', {
-          method: 'POST',
-          headers: { 'X-CSRFToken': csrfToken() },
-        });
-      } catch (err) { /* the reload below still empties the view */ }
-      window.location.reload();
-    });
-  }
-
-  input.focus();
-})();
+window.__CFG__ = {
+  CFG0: "{{ ai_ask_url|escapejs }}",
+  CFG1: "{{ ai_clear_url|escapejs }}",
+  CFG2: "{{ ai_del_url|escapejs }}",
+  PAGE: "{{ ai_page_url|escapejs }}",
+};
 </script>
+<script src="{% static 'js/pages/ai_assistant.js' %}"></script>
 {% endblock %}

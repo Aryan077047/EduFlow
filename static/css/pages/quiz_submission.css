@@ -1,0 +1,87 @@
+/* ==== extracted from template quiz_submission.html ==== */
+
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; }
+    body { background:#f4f7f1; color:#18311f; padding:2rem; min-height:100vh; }
+    .page { max-width:1100px; margin:auto; }
+
+    .back-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      color:#7d8f82; font-size:.85rem; font-weight:600;
+      padding:.5rem 1rem; border-radius:999px;
+      background:white; border:1px solid #dce8d8;
+      text-decoration:none; margin-bottom:1.5rem;
+      transition:.2s;
+    }
+    .back-btn:hover { background:#5d9c59; color:white; border-color:#5d9c59; }
+
+    h1 { font-size:1.8rem; font-weight:800; margin-bottom:.4rem; display:flex; align-items:center; gap:12px; }
+    h1 i { color:#5d9c59; }
+    .sub { color:#7d8f82; font-weight:500; margin-bottom:2rem; }
+
+    .stats {
+      display:grid; grid-template-columns:repeat(4, 1fr);
+      gap:1rem; margin-bottom:1.5rem;
+    }
+    .stat {
+      background:white; border-radius:16px; padding:1.2rem;
+      border:1px solid #e6efe0; text-align:center;
+    }
+    .stat strong { display:block; font-size:1.7rem; font-weight:800; color:#2f5233; line-height:1.1; }
+    .stat span { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#7d8f82; margin-top:.3rem; display:inline-block; }
+
+    .table-wrap {
+      background:white; border-radius:20px;
+      border:1px solid #e6efe0; overflow:hidden;
+      box-shadow:0 6px 24px -12px rgba(24,49,31,.12);
+    }
+    table { width:100%; border-collapse:collapse; }
+    thead th {
+      background:#fafcf7; padding:.9rem 1.2rem;
+      text-align:left; font-size:.72rem; font-weight:800;
+      text-transform:uppercase; letter-spacing:.8px;
+      color:#2f5233; border-bottom:1px solid #eef4e9;
+    }
+    tbody td {
+      padding:1rem 1.2rem; font-size:.88rem;
+      border-bottom:1px solid #f0f5ec; font-weight:500;
+    }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover { background:#fafcf7; }
+
+    .badge {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:.3rem .8rem; border-radius:999px;
+      font-size:.68rem; font-weight:800;
+      letter-spacing:.5px; text-transform:uppercase;
+    }
+    .badge.ok   { background:rgba(127,191,91,.15); color:#2f5233; }
+    .badge.warn { background:rgba(234,179,8,.15);  color:#ca8a04; }
+    .badge.fail { background:rgba(220,38,38,.1);   color:#dc2626; }
+
+    .btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:.5rem 1rem; border-radius:999px;
+      font-weight:700; font-size:.78rem;
+      text-decoration:none; cursor:pointer; border:none;
+      transition:.2s;
+    }
+    .btn-green { background:#5d9c59; color:white; }
+    .btn-green:hover { background:#2f5233; }
+
+    .empty {
+      text-align:center; padding:3rem 1.5rem;
+      color:#7d8f82; font-weight:500;
+    }
+    .empty i { font-size:3rem; color:#5d9c59; opacity:.4; margin-bottom:1rem; display:block; }
+
+    @media (max-width:700px) {
+      .stats { grid-template-columns:repeat(2, 1fr); }
+      thead { display:none; }
+      tbody td { display:block; padding:.6rem 1rem; border:none; }
+      tbody tr { display:block; padding:1rem 0; border-bottom:1px solid #eef4e9; }
+      tbody td::before {
+        content:attr(data-label); display:block;
+        font-size:.65rem; font-weight:800; text-transform:uppercase;
+        color:#7d8f82; margin-bottom:2px;
+      }
+    }

@@ -1,0 +1,15 @@
+/* ============================================================
+   MAIN CSS FILE - Imports all styles
+============================================================ */
+
+/* Base styles */
+@import 'base.css';
+
+/* Components */
+@import 'components/header.css';
+@import 'components/footer.css';
+
+/* Pages */
+@import 'pages/index.css';
+@import 'pages/login.css';
+@import 'pages/dashboard.css';

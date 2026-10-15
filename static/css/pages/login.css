@@ -1,0 +1,292 @@
+/* Page-specific styles for login.html */
+
+@keyframes loginFadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shared with the create-account page so both auth cards are identical in size */
+.auth-card {
+    max-width: 980px;
+    min-height: 640px;
+}
+
+/* ====================== CARD WRAPPER ====================== */
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 30px 15px;
+}
+
+.login-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 980px;
+    width: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    background: #fafdf7;
+    animation: loginFadeInUp 0.8s ease forwards;
+}
+
+/* ====================== LEFT PANEL ====================== */
+.login-left {
+    min-height: 640px;
+    padding: 2.8rem 2.2rem;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    position: relative;
+    background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.45)),
+                var(--login-bg-image) center/cover no-repeat;
+}
+
+.login-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(77, 139, 49, 0.20), transparent);
+}
+
+.login-left > * {
+    position: relative;
+    z-index: 1;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: white;
+    margin-bottom: auto;
+}
+
+.logo-mark {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .15);
+    border: 1px solid rgba(255, 255, 255, .25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.logo-text {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.logo-text span {
+    color: #a3e635;
+}
+
+.left-title {
+    margin-top: 30px;
+    margin-bottom: 10px;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.left-text {
+    margin: 0 0 auto;
+    font-size: 0.96rem;
+    opacity: 0.92;
+    line-height: 1.5;
+}
+
+/* Theme toggle (injected by login.js) */
+.theme-toggle-btn:disabled { opacity: .6; }
+
+/* ====================== RIGHT PANEL ====================== */
+.login-right {
+    padding: 2.8rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #fff;
+}
+
+.login-right h1 {
+    font-size: 1.78rem;
+    font-weight: 700;
+    color: #18311f;
+    margin-bottom: 8px;
+}
+
+.form-subtitle {
+    color: #7a887f;
+    margin-bottom: 28px;
+    font-size: 0.95rem;
+}
+
+/* ====================== FORM ====================== */
+.form-group {
+    margin-bottom: 22px;
+}
+
+.form-group .icon-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group .icon-label i {
+    font-size: 1.15rem;
+    color: #5d9c59;
+    width: 20px;
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    font-size: 0.96rem;
+    transition: all 0.3s ease;
+    background: #fff;
+    color: #1f2937;
+}
+
+.form-group input:focus {
+    border-color: #7fbf5b;
+    box-shadow: 0 0 0 4px rgba(127, 191, 91, 0.15);
+    outline: none;
+}
+
+.error {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.remember-forgot label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #4b5563;
+}
+
+.remember-forgot input[type="checkbox"] {
+    accent-color: #5d9c59;
+    width: 16px;
+    height: 16px;
+}
+
+.forgot-link {
+    color: #5d9c59;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.login-right .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4d8b31, #2f5233);
+    color: white;
+    font-weight: 600;
+    font-size: 1.02rem;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-right .btn-primary:hover {
+    background: linear-gradient(135deg, #5d9c59, #3d7a47);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(77, 139, 49, 0.35);
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 0.94rem;
+    color: #6b7280;
+}
+
+.auth-switch a {
+    color: #5d9c59;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-switch a:hover {
+    color: #4d8b31;
+    text-decoration: underline;
+}
+
+/* ====================== RESPONSIVE ====================== */
+@media (max-width: 900px) {
+    .login-left { min-height: 320px; }
+}
+
+@media (max-width: 768px) {
+    body { padding: 15px 10px; }
+    .login-card { grid-template-columns: 1fr; }
+    .login-left { padding: 2rem 1.8rem; }
+    .login-right { padding: 2rem 1.8rem; }
+}
+
+/* ====================== DARK MODE ====================== */
+[data-theme="dark"] .login-card {
+    background: #121d15;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .login-right {
+    background: #121d15;
+}
+
+[data-theme="dark"] .login-right h1 {
+    color: #e4ede6;
+}
+
+[data-theme="dark"] .form-subtitle {
+    color: #93a397;
+}
+
+[data-theme="dark"] .form-group .icon-label {
+    color: #b8c4ba;
+}
+
+[data-theme="dark"] .form-group input[type="email"],
+[data-theme="dark"] .form-group input[type="password"] {
+    background: #1a2820;
+    border-color: #2c3e32;
+    color: #e4ede6;
+}
+
+[data-theme="dark"] .remember-forgot label {
+    color: #b8c4ba;
+}
+
+[data-theme="dark"] .auth-switch {
+    color: #93a397;
+}
