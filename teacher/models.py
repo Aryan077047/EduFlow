@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 from django.conf import settings
 
@@ -105,15 +107,28 @@ class Playlist(models.Model):
     video = models.FileField(
         upload_to='course_videos/'
     )
+    title = models.CharField(max_length=200, blank=True, default='')
+    description = models.TextField(blank=True, default='')
+    order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(
         auto_now_add=True
     )
 
     class Meta:
         db_table = 'admmitions_playlist'
+        ordering = ['order', 'created_at', 'id']
 
     def __str__(self):
-        return self.video.name if self.video else "Untitled"
+        return self.display_title
+
+    @property
+    def display_title(self):
+        """Teacher-supplied title, falling back to the uploaded file name."""
+        if self.title:
+            return self.title
+        if self.video:
+            return os.path.basename(self.video.name)
+        return f'Video {self.pk}'
 
 
 class Lesson(models.Model):

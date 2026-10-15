@@ -86,7 +86,12 @@
     <div class="side-col">
 
       <div class="card">
-        <div class="card-title"><i class="fa-solid fa-address-card"></i> {{ t.personal_info }}</div>
+        <div class="card-title card-title-row">
+          <span><i class="fa-solid fa-address-card"></i> {{ t.personal_info }}</span>
+          <button type="button" class="action-btn edit-btn" id="openProfileModal" aria-haspopup="dialog" aria-controls="profileModal">
+            <i class="fa-regular fa-pen-to-square"></i> {{ t.edit_profile }}
+          </button>
+        </div>
         <div class="info-item">
           <div class="info-icon"><i class="fa-solid fa-user"></i></div>
           <div><div class="info-label">{{ t.full_name }}</div><div class="info-value">{{ info.get_full_name|default:info.email }}</div></div>
@@ -373,6 +378,98 @@
   </div>
   {% endif %}
 
+  <div class="modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle" data-autopen="{% if edit_profile_open %}1{% endif %}">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="profileModalTitle"><i class="fa-solid fa-user-pen"></i> {{ t.edit_profile }}</h2>
+        <button type="button" class="close-modal" id="closeProfileModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form method="POST" action="{% url 'edit_profile' %}" enctype="multipart/form-data" id="profileForm">
+        {% csrf_token %}
+        {% if edit_profile_form.errors or edit_profile_img_form.errors %}
+        <div class="modal-error">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ t.fix_following }}
+          {% if edit_profile_form.non_field_errors %}<ul>{% for error in edit_profile_form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endif %}
+        <div class="profile-edit-avatar">
+          <img id="profilePreview" src="{% if profile.picture %}{{ profile.picture.url }}{% else %}https://ui-avatars.com/api/?name={{ info.email|urlencode }}&background=5d9c59&color=fff&size=200{% endif %}" alt="{{ t.profile_picture }}">
+          <div class="form-group">
+            <label for="{{ edit_profile_img_form.picture.id_for_label }}">{{ t.profile_picture }}</label>
+            {{ edit_profile_img_form.picture }}
+            <span class="form-hint">{{ t.profile_picture_hint }}</span>
+            {% for error in edit_profile_img_form.picture.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="{{ edit_profile_form.first_name.id_for_label }}">{{ t.first_name }}</label>
+            {{ edit_profile_form.first_name }}
+            {% for error in edit_profile_form.first_name.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label for="{{ edit_profile_form.last_name.id_for_label }}">{{ t.last_name }}</label>
+            {{ edit_profile_form.last_name }}
+            {% for error in edit_profile_form.last_name.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <label for="{{ edit_profile_form.email.id_for_label }}">{{ t.email_label }}</label>
+            {{ edit_profile_form.email }}
+            <span class="form-hint">{{ t.email_login_hint }}</span>
+            {% for error in edit_profile_form.email.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group full">
+            <button type="submit" class="btn btn-primary" id="profileSubmitBtn" style="width:100%; justify-content:center;">
+              <i class="fa-solid fa-floppy-disk"></i> {{ t.save_changes }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal playlist-edit-modal" id="playlistEditModal" role="dialog" aria-modal="true" aria-labelledby="playlistEditTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="playlistEditTitle"><i class="fa-solid fa-film"></i> {{ t.edit_video }}</h2>
+        <button type="button" class="close-modal" id="closePlaylistEdit" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="playlistEditForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-error" id="playlistEditError" hidden></div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="pe_title">{{ t.video_title }}</label>
+            <input type="text" id="pe_title" name="title" maxlength="200">
+            <span class="form-hint" id="pe_title_hint">{{ t.video_title_hint }}</span>
+            <span class="field-error" data-error-for="title"></span>
+          </div>
+          <div class="form-group">
+            <label for="pe_position">{{ t.playlist_position }}</label>
+            <input type="number" id="pe_position" name="position" min="1" step="1" required>
+            <span class="field-error" data-error-for="position"></span>
+          </div>
+          <div class="form-group">
+            <label for="pe_video">{{ t.replace_video }}</label>
+            <input type="file" id="pe_video" name="video" accept="video/*,.mp4,.webm,.ogv,.ogg,.mov,.mkv,.avi,.wmv,.flv,.m4v,.mpg,.mpeg,.3gp">
+            <span class="form-hint">{{ t.keep_current_video }}</span>
+            <span class="field-error" data-error-for="video"></span>
+          </div>
+          <div class="form-group full">
+            <label for="pe_description">{{ t.description }}</label>
+            <textarea id="pe_description" name="description" rows="3" maxlength="2000"></textarea>
+            <span class="field-error" data-error-for="description"></span>
+          </div>
+          <div class="form-group full">
+            <button type="submit" class="btn btn-primary" id="playlistEditSubmit" style="width:100%; justify-content:center;">
+              <i class="fa-solid fa-floppy-disk"></i> {{ t.save_changes }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="playlist-overlay" id="playlistOverlay"></div>
   <div class="playlist-sidebar" id="playlistSidebar">
     <div class="playlist-header">
@@ -419,6 +516,17 @@ window.__CFG__ = {
   publishedLabel: '{{ t.published }}',
   publishLabel: '{{ t.publish }}',
   maxUploadBytes: {{ playlist_max_upload_bytes|default:1073741824 }},
+  profileImageMaxBytes: 5242880,
+  i18n: {
+    editVideo: '{{ t.edit_video|escapejs }}',
+    deleteVideo: '{{ t.delete_video|escapejs }}',
+    deleteVideoConfirm: '{{ t.delete_video_confirm|escapejs }}',
+    cancel: '{{ t.cancel|escapejs }}',
+    del: '{{ t.delete|escapejs }}',
+    saving: '{{ t.saving|escapejs }}',
+    deleting: '{{ t.deleting|escapejs }}',
+    profilePictureHint: '{{ t.profile_picture_hint|escapejs }}'
+  }
 };
 {% if messages %}
 window.__djangoMessages = [

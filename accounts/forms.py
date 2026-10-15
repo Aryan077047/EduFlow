@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -39,107 +39,101 @@ class teacher_form(UserCreationForm):
 
 
 # ============================================================
-# USER PROFILE — EDIT PROFILE (name fields; email is login identity)
+# USER PROFILE — EDIT PROFILE
 # ============================================================
 
+PROFILE_IMAGE_MAX_MB = 5
+
+
 class EditProfileForm(forms.ModelForm):
-    """Edit the signed-in user's own profile fields. Email is the login
-    identity (USERNAME_FIELD), so it stays read-only here by design."""
+    """Edit the signed-in user's own name and email (the login identity)."""
 
     first_name = forms.CharField(
         max_length=30,
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
+            'class': 'input-field',
             'placeholder': 'Your first name',
+            'autocomplete': 'given-name',
         }),
     )
     last_name = forms.CharField(
         max_length=30,
         required=False,
         widget=forms.TextInput(attrs={
-            'class': 'form-control',
+            'class': 'input-field',
             'placeholder': 'Your last name',
+            'autocomplete': 'family-name',
+        }),
+    )
+    email = forms.EmailField(
+        max_length=254,
+        widget=forms.EmailInput(attrs={
+            'class': 'input-field',
+            'placeholder': 'you@example.com',
+            'autocomplete': 'email',
         }),
     )
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name']
+        fields = ['first_name', 'last_name', 'email']
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('auto_id', 'id_profile_%s')
+        super().__init__(*args, **kwargs)
+
+    def clean_first_name(self):
+        return (self.cleaned_data.get('first_name') or '').strip()
+
+    def clean_last_name(self):
+        return (self.cleaned_data.get('last_name') or '').strip()
+
+    def clean_email(self):
+        email = User.objects.normalize_email(self.cleaned_data.get('email') or '').strip()
+        clash = User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise forms.ValidationError('Another account already uses this email address.')
+        return email
 
 
 # ============================================================
 # SETTINGS — CHANGE PASSWORD
 # ============================================================
 
-class ChangePasswordForm(forms.Form):
-    """Settings > Security: change the signed-in user's password.
-
-    Requires the current password, enforces Django's configured password
-    validators on the new one, and keeps the session (no re-auth needed).
-    Field names follow Django's PasswordChangeForm conventions.
-    """
-
-    old_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'autocomplete': 'current-password',
-        }),
-    )
-    new_password1 = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'autocomplete': 'new-password',
-        }),
-    )
-    new_password2 = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'autocomplete': 'new-password',
-        }),
-    )
+class ChangePasswordForm(PasswordChangeForm):
+    """Settings > Security: Django's PasswordChangeForm (current password
+    check, matching confirmation, AUTH_PASSWORD_VALIDATORS, secure save)."""
 
     def __init__(self, user=None, *args, **kwargs):
-        self.user = user
-        # Self-registration is the default so the form validates standalone;
-        # views pass user=request.user for the real check.
         kwargs.setdefault('auto_id', 'id_changepw_%s')
-        super().__init__(*args, **kwargs)
-
-    def clean_old_password(self):
-        old = self.cleaned_data.get('old_password')
-        if self.user is not None and not self.user.check_password(old):
-            raise forms.ValidationError('Your current password was entered incorrectly.')
-        return old
-
-    def clean_new_password2(self):
-        p1 = self.cleaned_data.get('new_password1')
-        p2 = self.cleaned_data.get('new_password2')
-        if p1 and p2 and p1 != p2:
-            raise forms.ValidationError('The two password fields did not match.')
-        return p2
-
-    def _post_clean(self):
-        password = self.cleaned_data.get('new_password1')
-        if not password:
-            return
-        user = self.user or User()
-        try:
-            validate_password(password, user=user)
-        except ValidationError as exc:
-            self.add_error('new_password1', exc)
+        super().__init__(user, *args, **kwargs)
+        for name in ('old_password', 'new_password1', 'new_password2'):
+            self.fields[name].widget.attrs['class'] = 'pw-input'
 
 
 class ProfileImgForm(forms.ModelForm):
     picture = forms.ImageField(
         required=False,
         validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'gif', 'webp'])],
-        widget=forms.FileInput(attrs={'accept': 'image/*'})
+        widget=forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png,.gif,.webp'})
     )
 
     class Meta:
         model = ProfileImg
         fields = ['picture']
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('auto_id', 'id_profile_%s')
+        super().__init__(*args, **kwargs)
+
+    def clean_picture(self):
+        picture = self.cleaned_data.get('picture')
+        if picture and getattr(picture, 'size', 0) > PROFILE_IMAGE_MAX_MB * 1024 * 1024:
+            raise forms.ValidationError(
+                f'Profile pictures must be {PROFILE_IMAGE_MAX_MB} MB or smaller.'
+            )
+        return picture
 
 
 # ============================================================

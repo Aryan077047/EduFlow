@@ -1,5 +1,8 @@
 from hesabpay import on_payment_success
 from hesabpay.services.webhook import process_webhook
+from django.urls import reverse
+
+from accounts.notifications import notify
 from .models import CourseOrder, Enrollment
 
 
@@ -16,12 +19,25 @@ def fulfill_course_payment(context):
         return
     order = context.instance
     if isinstance(order, CourseOrder):
-        Enrollment.objects.get_or_create(
+        _, created = Enrollment.objects.get_or_create(
             student=order.student,
             course=order.course,
         )
         order.paid = True
         order.save(update_fields=['paid'])
+        if created:
+            course = order.course
+            notify(
+                order.student,
+                f'You are now enrolled in "{course.title}".',
+                link=reverse('user_profile'),
+                kind='success',
+            )
+            notify(
+                course.student,
+                f'{order.student.get_full_name() or order.student.email} enrolled in "{course.title}".',
+                link=reverse('teacher_analytics'),
+            )
 
 
 def simulate_hesabpay_success(order, transaction_id=None):

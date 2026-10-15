@@ -78,6 +78,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'onlinestudy.i18n_local.site_context_processor',
+                'accounts.notifications.notifications_context_processor',
             ],
         },
     },

@@ -141,10 +141,22 @@
     document.addEventListener('click', function (e) {
       if (e.target === courseModal) closeCourseModal();
       if (e.target === teacherModal) setModalState(teacherModal, false);
+      if (e.target === $('profileModal')) setModalState($('profileModal'), false);
+      if (e.target === $('playlistEditModal')) closePlaylistEdit();
     });
 
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
+      const confirmOverlay = $('confirmModal');
+      if (confirmOverlay && confirmOverlay.classList.contains('show')) return;
+      if ($('playlistEditModal') && $('playlistEditModal').classList.contains('active')) {
+        closePlaylistEdit();
+        return;
+      }
+      if ($('profileModal') && $('profileModal').classList.contains('active')) {
+        setModalState($('profileModal'), false);
+        return;
+      }
       const sidebar = $('playlistSidebar');
       if (sidebar && sidebar.classList.contains('open')) {
         closePlaylist();
@@ -268,6 +280,8 @@
     let currentUploadUrl = '';
     let selectedFile = null;
     let requestToken = 0;
+    let currentVideos = {};
+    const I18N = (window.__CFG__ && window.__CFG__.i18n) || {};
 
     function playVideo(title, src) {
       if (!src) {
@@ -319,15 +333,30 @@
 
       if (videos.length > 0) {
         html += '<div class="playlist-section-title">&#127916; Videos (' + videos.length + ')</div>';
+        currentVideos = {};
         videos.forEach(function (video, index) {
           const url = video.video_url || '';
           const title = video.title || ('Video ' + (index + 1));
+          currentVideos[video.id] = video;
+          let manage = '';
+          if (video.edit_url || video.delete_url) {
+            manage = '<div class="playlist-manage">' +
+              (video.edit_url
+                ? '<button class="manage-btn edit" type="button" data-edit-video="' + esc(video.id) + '" title="' + esc(I18N.editVideo) + '" aria-label="' + esc(I18N.editVideo) + '"><i class="fa-regular fa-pen-to-square"></i></button>'
+                : '') +
+              (video.delete_url
+                ? '<button class="manage-btn delete" type="button" data-delete-video="' + esc(video.id) + '" title="' + esc(I18N.deleteVideo) + '" aria-label="' + esc(I18N.deleteVideo) + '"><i class="fa-regular fa-trash-can"></i></button>'
+                : '') +
+              '</div>';
+          }
           html +=
-            '<div class="playlist-item">' +
+            '<div class="playlist-item" data-video-id="' + esc(video.id) + '">' +
               '<div class="thumb"><i class="fa-solid fa-play"></i></div>' +
               '<div class="info">' +
                 '<h4>' + (index + 1) + '. ' + esc(title) + '</h4>' +
+                (video.description ? '<p class="video-desc">' + esc(video.description) + '</p>' : '') +
               '</div>' +
+              manage +
               '<button class="play-btn" type="button" data-play-video data-src="' + esc(url) + '" data-title="' + esc(title) + '" title="Play video">' +
                 '<i class="fa-solid fa-play"></i>' +
               '</button>' +
@@ -387,6 +416,16 @@
       playlistContent.querySelectorAll('[data-play-video]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           playVideo(this.dataset.title, this.dataset.src);
+        });
+      });
+      playlistContent.querySelectorAll('[data-edit-video]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          openPlaylistEdit(currentVideos[this.dataset.editVideo], videos.length);
+        });
+      });
+      playlistContent.querySelectorAll('[data-delete-video]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          deletePlaylistVideo(currentVideos[this.dataset.deleteVideo], this);
         });
       });
     }
@@ -653,6 +692,174 @@
           .finally(function () {
             button.disabled = false;
             button.innerHTML = original;
+          });
+      });
+    }
+
+    function postForm(url, body) {
+      return fetch(url, {
+        method: 'POST',
+        body: body,
+        headers: {
+          'X-CSRFToken': getCsrfToken() || '',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (!response.ok) {
+            const error = new Error(data.error || data.message || ('Server error: ' + response.status));
+            error.fields = data.errors || {};
+            throw error;
+          }
+          return data;
+        });
+      });
+    }
+
+    function setBusy(button, busy, label) {
+      if (!button) return;
+      if (busy) {
+        button.dataset.original = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + esc(label || '');
+      } else {
+        button.disabled = false;
+        if (button.dataset.original) button.innerHTML = button.dataset.original;
+      }
+    }
+
+    /* -------- Edit profile -------- */
+    const profileModal = $('profileModal');
+    const profileForm = $('profileForm');
+    const profileInput = $('id_profile_picture');
+    const profilePreview = $('profilePreview');
+    if ($('openProfileModal') && profileModal) {
+      $('openProfileModal').addEventListener('click', function () {
+        setModalState(profileModal, true);
+        const first = $('id_profile_first_name');
+        if (first) setTimeout(function () { first.focus(); }, 60);
+      });
+    }
+    if ($('closeProfileModal')) {
+      $('closeProfileModal').addEventListener('click', function () { setModalState(profileModal, false); });
+    }
+    if (profileModal && profileModal.dataset.autopen === '1') setModalState(profileModal, true);
+    if (profileInput) {
+      const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      profileInput.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const maxBytes = window.__CFG__.profileImageMaxBytes;
+        if (IMAGE_EXTENSIONS.indexOf(videoExtension(file.name)) === -1 || file.size > maxBytes) {
+          showToast(I18N.profilePictureHint || 'Invalid image.', 'error');
+          this.value = '';
+          return;
+        }
+        if (profilePreview && window.URL) profilePreview.src = URL.createObjectURL(file);
+      });
+    }
+    if (profileForm) {
+      profileForm.addEventListener('submit', function () {
+        setBusy($('profileSubmitBtn'), true, I18N.saving);
+      });
+    }
+
+    /* -------- Edit / delete playlist videos -------- */
+    const playlistEditModal = $('playlistEditModal');
+    const playlistEditForm = $('playlistEditForm');
+    const playlistEditError = $('playlistEditError');
+
+    function clearPlaylistErrors() {
+      if (playlistEditError) { playlistEditError.hidden = true; playlistEditError.textContent = ''; }
+      if (playlistEditForm) {
+        playlistEditForm.querySelectorAll('[data-error-for]').forEach(function (el) { el.textContent = ''; });
+      }
+    }
+
+    function closePlaylistEdit() {
+      if (!playlistEditModal) return;
+      playlistEditModal.classList.remove('active');
+      if (!(sidebar && sidebar.classList.contains('open'))) document.body.style.overflow = '';
+    }
+
+    function openPlaylistEdit(video, total) {
+      if (!video || !video.edit_url || !playlistEditForm) return;
+      clearPlaylistErrors();
+      playlistEditForm.reset();
+      playlistEditForm.dataset.url = video.edit_url;
+      $('pe_title').value = video.custom_title || '';
+      $('pe_title').placeholder = video.file_name || '';
+      $('pe_description').value = video.description || '';
+      $('pe_position').value = video.position || 1;
+      $('pe_position').max = total || 1;
+      playlistEditModal.classList.add('active');
+      setTimeout(function () { $('pe_title').focus(); }, 60);
+    }
+
+    if ($('closePlaylistEdit')) $('closePlaylistEdit').addEventListener('click', closePlaylistEdit);
+
+    if (playlistEditForm) {
+      playlistEditForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearPlaylistErrors();
+        const url = playlistEditForm.dataset.url;
+        if (!url) return;
+        const file = $('pe_video').files && $('pe_video').files[0];
+        if (file && (!looksLikeVideo(file) || file.size === 0 || file.size > MAX_UPLOAD_BYTES)) {
+          playlistEditForm.querySelector('[data-error-for="video"]').textContent =
+            'Choose a non-empty video file up to ' + humanSize(MAX_UPLOAD_BYTES) + '.';
+          return;
+        }
+        const button = $('playlistEditSubmit');
+        setBusy(button, true, I18N.saving);
+        postForm(url, new FormData(playlistEditForm))
+          .then(function (data) {
+            closePlaylistEdit();
+            showToast(data.message || 'Video updated.', 'success');
+            fetchPlaylist(currentPlaylistUrl);
+          })
+          .catch(function (error) {
+            const fields = error.fields || {};
+            Object.keys(fields).forEach(function (name) {
+              const slot = playlistEditForm.querySelector('[data-error-for="' + name + '"]');
+              if (slot) {
+                slot.textContent = fields[name].join(' ');
+              } else if (playlistEditError) {
+                playlistEditError.hidden = false;
+                playlistEditError.textContent = fields[name].join(' ');
+              }
+            });
+            if (!Object.keys(fields).length && playlistEditError) {
+              playlistEditError.hidden = false;
+              playlistEditError.textContent = error.message;
+            }
+            showToast(error.message, 'error');
+          })
+          .finally(function () { setBusy(button, false); });
+      });
+    }
+
+    function deletePlaylistVideo(video, button) {
+      if (!video || !video.delete_url || !window.ConfirmModal) return;
+      window.ConfirmModal.show({
+        title: I18N.deleteVideo || 'Delete video',
+        message: '"' + video.title + '" — ' + (I18N.deleteVideoConfirm || 'This cannot be undone.'),
+        confirmText: I18N.del || 'Delete',
+        cancelText: I18N.cancel || 'Cancel'
+      }).then(function (confirmed) {
+        if (!confirmed) return;
+        setBusy(button, true, '');
+        postForm(video.delete_url, new FormData())
+          .then(function (data) {
+            showToast(data.message || 'Video deleted.', 'success');
+            const src = videoPlayer && videoPlayer.querySelector('source');
+            if (src && video.video_url && src.getAttribute('src') === video.video_url) closeVideoPlayer();
+            fetchPlaylist(currentPlaylistUrl);
+          })
+          .catch(function (error) {
+            setBusy(button, false);
+            showToast(error.message, 'error');
           });
       });
     }

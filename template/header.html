@@ -45,14 +45,34 @@
                     <i class="fa fa-expand"></i>
                 </button>
 
-                <button class="action-btn" id="notifBtn" title="{{ t.notifications }}">
-                    <i class="fa fa-bell"></i>
-                    <span class="badge-dot"></span>
-                </button>
+                {% if request.user.is_authenticated %}
+                <div class="notif-dropdown" id="notifDropdown"
+                     data-list-url="{% url 'notifications_list' %}"
+                     data-read-all-url="{% url 'notifications_read_all' %}">
+                    <button type="button" class="action-btn" id="notifBtn" title="{{ t.notifications }}"
+                            aria-label="{{ t.notifications }}" aria-haspopup="true" aria-expanded="false" aria-controls="notifPanel">
+                        <i class="fa fa-bell"></i>
+                        <span class="badge-count" id="notifCount"{% if not notif_unread_count %} hidden{% endif %}>{% if notif_unread_count > 99 %}99+{% else %}{{ notif_unread_count|default:0 }}{% endif %}</span>
+                    </button>
+                    <div class="notif-panel" id="notifPanel" role="region" aria-label="{{ t.notifications }}">
+                        <div class="notif-head">
+                            <strong><i class="fa fa-bell"></i> {{ t.notifications }}</strong>
+                            <button type="button" class="notif-read-all" id="notifReadAll"{% if not notif_unread_count %} disabled{% endif %}>
+                                <i class="fa fa-check-double"></i> {{ t.mark_all_read }}
+                            </button>
+                        </div>
+                        <div class="notif-list" id="notifList" aria-live="polite"
+                             data-empty-text="{{ t.no_notifications }}"
+                             data-loading-text="{{ t.loading }}"
+                             data-error-text="{{ t.notifications_error }}"
+                             data-mark-read-text="{{ t.mark_read }}"
+                             data-unread-text="{{ t.unread }}"></div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <button class="action-btn" id="msgBtn" title="{{ t.messages }}">
                     <i class="fa fa-envelope"></i>
-                    <span class="badge-count">5</span>
                 </button>
 
                 {% if request.user.is_authenticated %}

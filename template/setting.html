@@ -88,6 +88,7 @@
       </div>
     </div>
 
+    {% if user.is_authenticated %}
     <!-- SECURITY: CHANGE PASSWORD -->
     <div class="group">
       <div class="group-head">
@@ -102,7 +103,7 @@
         </div>
         {% endfor %}
       {% endif %}
-      <form method="POST" action="{% url 'change_password' %}" class="pw-form" autocomplete="off">
+      <form method="POST" action="{% url 'change_password' %}" class="pw-form" autocomplete="off" data-loading-form>
         {% csrf_token %}
         {% if change_password_form.non_field_errors %}
         <div class="pw-banner pw-banner-error">
@@ -115,7 +116,7 @@
             <label for="{{ change_password_form.old_password.id_for_label }}">{{ t.current }}</label>
             <div class="pw-wrap">
               <input type="password" name="old_password" id="{{ change_password_form.old_password.id_for_label }}"
-                     class="pw-input" placeholder="••••••••" autocomplete="current-password">
+                     class="pw-input{% if change_password_form.old_password.errors %} has-error{% endif %}" required placeholder="••••••••" autocomplete="current-password">
               <button type="button" class="pw-eye" data-eye-for="{{ change_password_form.old_password.id_for_label }}" aria-label="Show password" tabindex="0"><i class="fas fa-eye"></i></button>
             </div>
             {% for e in change_password_form.old_password.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
@@ -124,7 +125,7 @@
             <label for="{{ change_password_form.new_password1.id_for_label }}">{{ t.new }}</label>
             <div class="pw-wrap">
               <input type="password" name="new_password1" id="{{ change_password_form.new_password1.id_for_label }}"
-                     class="pw-input" placeholder="{{ t.new_password_placeholder }}" autocomplete="new-password">
+                     class="pw-input{% if change_password_form.new_password1.errors %} has-error{% endif %}" required placeholder="{{ t.new_password_placeholder }}" autocomplete="new-password">
               <button type="button" class="pw-eye" data-eye-for="{{ change_password_form.new_password1.id_for_label }}" aria-label="Show password" tabindex="0"><i class="fas fa-eye"></i></button>
             </div>
             {% for e in change_password_form.new_password1.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
@@ -133,7 +134,7 @@
             <label for="{{ change_password_form.new_password2.id_for_label }}">{{ t.confirm }}</label>
             <div class="pw-wrap">
               <input type="password" name="new_password2" id="{{ change_password_form.new_password2.id_for_label }}"
-                     class="pw-input" placeholder="{{ t.repeat_password_placeholder }}" autocomplete="new-password">
+                     class="pw-input{% if change_password_form.new_password2.errors %} has-error{% endif %}" required placeholder="{{ t.repeat_password_placeholder }}" autocomplete="new-password">
               <button type="button" class="pw-eye" data-eye-for="{{ change_password_form.new_password2.id_for_label }}" aria-label="Show password" tabindex="0"><i class="fas fa-eye"></i></button>
             </div>
             {% for e in change_password_form.new_password2.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
@@ -141,7 +142,7 @@
         </div>
         <div class="group-foot">
           <button type="reset" class="btn btn-ghost">{{ t.cancel }}</button>
-          <button type="submit" class="btn btn-green"><i class="fas fa-key"></i> {{ t.update_password }}</button>
+          <button type="submit" class="btn btn-green" data-loading-text="{{ t.saving }}"><i class="fas fa-key"></i> {{ t.update_password }}</button>
         </div>
       </form>
     </div>
@@ -156,12 +157,19 @@
         <div class="label">
           <strong class="danger-title">{{ t.delete_account }}</strong>
           <small>{{ t.delete_account_hint }}</small>
+          {% if delete_account_blockers %}
+          <div class="danger-blockers" role="note">
+            <strong><i class="fas fa-lock"></i> {{ t.delete_account_blocked }}</strong>
+            <ul>{% for reason in delete_account_blockers %}<li>{{ reason }}</li>{% endfor %}</ul>
+          </div>
+          {% endif %}
         </div>
-        <button type="button" class="btn btn-red" id="openDeleteAccountModal">
-          <i class="fas fa-trash-alt"></i> {{ t.delete }}
+        <button type="button" class="btn btn-red" id="openDeleteAccountModal"{% if delete_account_blockers %} disabled aria-disabled="true"{% endif %}>
+          <i class="fas fa-trash-alt"></i> {{ t.delete_account }}
         </button>
       </div>
     </div>
+    {% endif %}
 
   </div>
 
@@ -169,31 +177,35 @@
   {% include 'confirm_modal.html' %}
 
   <!-- ==================== DELETE ACCOUNT MODAL ==================== -->
-  <div class="confirm-modal-overlay" id="deleteAccountModal" role="dialog" aria-modal="true" aria-labelledby="delAccTitle" style="display:none;">
+  {% if user.is_authenticated %}
+  <div class="confirm-modal-overlay" id="deleteAccountModal" role="dialog" aria-modal="true" aria-labelledby="delAccTitle" style="display:none;" data-autopen="{% if delete_account_open and not delete_account_blockers %}1{% endif %}">
     <div class="confirm-modal">
       <div class="confirm-modal-header">
         <h3 class="confirm-modal-title" id="delAccTitle"><i class="fas fa-triangle-exclamation"></i> {{ t.delete_account }}</h3>
         <button type="button" class="confirm-modal-close" id="delAccClose" aria-label="Close"><i class="fas fa-times"></i></button>
       </div>
-      <form method="post" action="{% url 'delete_account' %}" id="delAccForm">
+      <form method="post" action="{% url 'delete_account' %}" id="delAccForm" data-loading-form>
         {% csrf_token %}
         <div class="confirm-modal-body">
           <p class="confirm-modal-message">{{ t.delete_account_confirm }}</p>
-          <div class="fld pw-wrap" style="margin-top:0.9rem;">
-            <input type="password" name="confirm_password" id="delAccPassword" class="pw-input" required
+          <label class="del-acc-label" for="delAccPassword">{{ t.delete_account_password_label }}</label>
+          <div class="fld pw-wrap">
+            <input type="password" name="confirm_password" id="delAccPassword" class="pw-input{% if delete_account_error %} has-error{% endif %}" required
                    placeholder="{{ t.enter_your_password }}" autocomplete="current-password">
+            <button type="button" class="pw-eye" data-eye-for="delAccPassword" aria-label="Show password"><i class="fas fa-eye"></i></button>
           </div>
           {% if delete_account_error %}
-          <div class="pw-banner pw-banner-error" style="margin-top:0.7rem;">{{ delete_account_error }}</div>
+          <div class="pw-banner pw-banner-error" style="margin-top:0.7rem;"><i class="fas fa-circle-exclamation"></i> {{ delete_account_error }}</div>
           {% endif %}
         </div>
         <div class="confirm-modal-footer">
           <button type="button" class="btn btn-secondary" id="delAccCancel">{{ t.cancel }}</button>
-          <button type="submit" class="btn btn-danger">{{ t.permanently_delete }}</button>
+          <button type="submit" class="btn btn-danger" data-loading-text="{{ t.deleting }}"><i class="fas fa-trash-alt"></i> {{ t.permanently_delete }}</button>
         </div>
       </form>
     </div>
   </div>
+  {% endif %}
 
   <!-- ==================== DARK MODE TOGGLE ==================== -->
   <script src="{% static 'js/pages/setting.js' %}"></script>
@@ -213,6 +225,16 @@
           });
       });
 
+      // Loading state for state-changing forms (prevents double submits)
+      document.querySelectorAll('form[data-loading-form]').forEach(function (form) {
+          form.addEventListener('submit', function () {
+              var btn = form.querySelector('button[type="submit"][data-loading-text]');
+              if (!btn) return;
+              btn.disabled = true;
+              btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + btn.dataset.loadingText;
+          });
+      });
+
       // Delete account modal
       var openBtn = document.getElementById('openDeleteAccountModal');
       var overlay = document.getElementById('deleteAccountModal');
@@ -221,13 +243,16 @@
               overlay.classList.remove('show');
               setTimeout(function () { overlay.style.display = 'none'; }, 250);
           };
-          openBtn.addEventListener('click', function () {
+          var open = function () {
+              if (openBtn.disabled) return;
               overlay.style.display = 'flex';
               overlay.offsetHeight;
               overlay.classList.add('show');
               var pw = document.getElementById('delAccPassword');
               if (pw) setTimeout(function () { pw.focus(); }, 60);
-          });
+          };
+          openBtn.addEventListener('click', open);
+          if (overlay.dataset.autopen === '1') open();
           document.getElementById('delAccClose')?.addEventListener('click', close);
           document.getElementById('delAccCancel')?.addEventListener('click', close);
           overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });

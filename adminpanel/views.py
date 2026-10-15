@@ -8,9 +8,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseForbidden
 from django.db.models import Count
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import AIChatMessage, PasswordResetOTP
+from accounts.notifications import notify
 from teacher.models import Course, Lesson, Playlist, Quiz, TeacherApplication
 from student.models import Comment, Enrollment, Like, Post, QuizAttempt
 
@@ -180,6 +182,12 @@ def approve_staff(request, pk):
     user.role = 'teacher'
     user.is_staff = True
     user.save()
+    notify(
+        user,
+        'Your teacher application was approved. You can now create courses.',
+        link=reverse('user_profile'),
+        kind='success',
+    )
 
     return redirect('admin_dashboard')
 
@@ -195,6 +203,12 @@ def reject_staff(request, pk):
     application = get_object_or_404(TeacherApplication, pk=pk)
     application.status = 'rejected'
     application.save()
+    notify(
+        application.user,
+        'Your teacher application was not approved. You can update it and apply again.',
+        link=reverse('user_profile'),
+        kind='warning',
+    )
 
     return redirect('admin_dashboard')
 

@@ -15,6 +15,12 @@ urlpatterns = [
     path('setting/language/', views.save_language, name='save_language'),
     path('setting/change_password/', views.change_password, name='change_password'),
     path('setting/delete_account/', views.delete_account, name='delete_account'),
+    path('user_profile/edit/', views.edit_profile, name='edit_profile'),
+
+    # ============ NOTIFICATIONS ============
+    path('notifications/', views.notifications_list, name='notifications_list'),
+    path('notifications/<int:pk>/read/', views.notification_read, name='notification_read'),
+    path('notifications/read_all/', views.notifications_read_all, name='notifications_read_all'),
 
     # ============ AI STUDY ASSISTANT ============
     path('ai_assistant/', views.ai_assistant, name='ai_assistant'),

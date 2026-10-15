@@ -1002,3 +1002,571 @@ class LanguageSwitchTest(AuthedTestCase):
         # Unknown keys degrade to empty string instead of crashing a page.
         self.assertEqual(translate('fa', 'made_up_key'), '')
         self.assertEqual(set(LANGUAGES), {'en', 'fa', 'ps'})
+
+
+# ============================================================
+# SETTINGS / PROFILE / NOTIFICATIONS / PLAYLIST MANAGEMENT
+# ============================================================
+
+import io
+import os
+
+from django.test import Client
+from PIL import Image
+
+from accounts.models import Notification, ProfileImg
+from accounts.notifications import notify
+
+
+NEW_PASSWORD = 'Gr33n-Meadow-Lantern!'
+
+
+class ChangePasswordTest(AuthedTestCase):
+    url = reverse('change_password')
+
+    def post(self, old='Passw0rd!123', new1=NEW_PASSWORD, new2=NEW_PASSWORD):
+        return self.client.post(self.url, {
+            'old_password': old, 'new_password1': new1, 'new_password2': new2,
+        })
+
+    def test_success_changes_password_and_keeps_session(self):
+        self.login(self.student)
+        response = self.post()
+        self.assertRedirects(response, reverse('setting'))
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password(NEW_PASSWORD))
+        # Session survives the hash change.
+        page = self.client.get(reverse('user_profile'))
+        self.assertEqual(page.status_code, 200)
+        self.assertTrue(Notification.objects.filter(user=self.student, kind='security').exists())
+
+    def test_wrong_current_password(self):
+        self.login(self.student)
+        response = self.post(old='not-my-password')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('old_password', response.context['change_password_form'].errors)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password('Passw0rd!123'))
+
+    def test_mismatched_new_passwords(self):
+        self.login(self.student)
+        response = self.post(new2=NEW_PASSWORD + 'x')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('new_password2', response.context['change_password_form'].errors)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password('Passw0rd!123'))
+
+    def test_password_validators_apply(self):
+        self.login(self.student)
+        for weak in ('12345678', 'password', 'short'):
+            response = self.post(new1=weak, new2=weak)
+            self.assertEqual(response.status_code, 400, weak)
+            self.assertTrue(response.context['change_password_form'].errors, weak)
+        self.student.refresh_from_db()
+        self.assertTrue(self.student.check_password('Passw0rd!123'))
+
+    def test_settings_page_renders_form_errors(self):
+        self.login(self.student)
+        response = self.post(old='nope')
+        self.assertContains(response, 'field-error', status_code=400)
+
+    def test_anonymous_redirected_to_login(self):
+        response = self.post()
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('user_login'), response.url)
+
+    def test_csrf_required(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.student)
+        response = client.post(self.url, {
+            'old_password': 'Passw0rd!123', 'new_password1': NEW_PASSWORD, 'new_password2': NEW_PASSWORD,
+        })
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous_settings_page_hides_security_forms(self):
+        response = self.client.get(reverse('setting'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'name="old_password"')
+        self.assertNotContains(response, 'id="deleteAccountModal"')
+
+
+class DeleteAccountTest(AuthedTestCase):
+    url = reverse('delete_account')
+
+    def make_course(self, owner, **extra):
+        return Course.objects.create(
+            student=owner, title='C', category='python', level='beginner',
+            Course_price=0, description='x', is_published=True, **extra,
+        )
+
+    def test_correct_password_deletes_and_logs_out(self):
+        user = make_user('leaver@example.com')
+        course = self.make_course(self.teacher)
+        Enrollment.objects.create(student=user, course=course)
+        Enrollment.objects.create(student=self.student, course=course)
+        self.login(user)
+        response = self.client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertRedirects(response, reverse('index'), fetch_redirect_response=False)
+        self.assertFalse(User.objects.filter(email='leaver@example.com').exists())
+        # Shared course and other students' records are untouched.
+        self.assertTrue(Course.objects.filter(pk=course.pk).exists())
+        self.assertTrue(Enrollment.objects.filter(student=self.student, course=course).exists())
+        # Session invalidated.
+        self.assertEqual(self.client.get(reverse('user_profile')).status_code, 302)
+
+    def test_wrong_password_keeps_account(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {'confirm_password': 'wrong'})
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(response.context['delete_account_open'])
+        self.assertContains(response, 'That password is incorrect', status_code=400)
+        self.assertTrue(User.objects.filter(pk=self.student.pk).exists())
+
+    def test_empty_password_keeps_account(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {})
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(User.objects.filter(pk=self.student.pk).exists())
+
+    def test_get_not_allowed(self):
+        self.login(self.student)
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.assertTrue(User.objects.filter(pk=self.student.pk).exists())
+
+    def test_anonymous_redirected(self):
+        response = self.client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('user_login'), response.url)
+
+    def test_csrf_required(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.student)
+        response = client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=self.student.pk).exists())
+
+    def test_superuser_is_protected(self):
+        self.login(self.superuser)
+        response = self.client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=self.superuser.pk).exists())
+
+    def test_teacher_with_enrolled_students_is_blocked(self):
+        course = self.make_course(self.teacher)
+        Enrollment.objects.create(student=self.student, course=course)
+        self.login(self.teacher)
+        response = self.client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=self.teacher.pk).exists())
+        self.assertTrue(Enrollment.objects.filter(student=self.student, course=course).exists())
+
+    def test_teacher_with_others_comments_is_blocked(self):
+        course = self.make_course(self.teacher)
+        Comment.objects.create(course=course, user=self.student, text='hi')
+        self.login(self.teacher)
+        response = self.client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Comment.objects.filter(user=self.student).exists())
+
+    def test_settings_page_lists_blockers_and_disables_button(self):
+        course = self.make_course(self.teacher)
+        Enrollment.objects.create(student=self.student, course=course)
+        self.login(self.teacher)
+        response = self.client.get(reverse('setting'))
+        self.assertTrue(response.context['delete_account_blockers'])
+        self.assertContains(response, 'danger-blockers')
+
+    def test_teacher_without_learners_can_delete_own_courses_only(self):
+        teacher = make_user('solo@example.com', role='teacher')
+        own = self.make_course(teacher)
+        other = self.make_course(self.teacher)
+        self.login(teacher)
+        response = self.client.post(self.url, {'confirm_password': 'Passw0rd!123'})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Course.objects.filter(pk=own.pk).exists())
+        self.assertTrue(Course.objects.filter(pk=other.pk).exists())
+
+
+def png_upload(name='avatar.png', size=(10, 10)):
+    buf = io.BytesIO()
+    Image.new('RGB', size, (93, 156, 89)).save(buf, format='PNG')
+    return SimpleUploadedFile(name, buf.getvalue(), content_type='image/png')
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class EditProfileTest(TempMediaMixin, AuthedTestCase):
+    url = reverse('edit_profile')
+
+    def test_update_name_and_email(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {
+            'first_name': '  Sara ', 'last_name': 'Green', 'email': 'sara@example.com',
+        })
+        self.assertRedirects(response, reverse('user_profile'))
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.first_name, 'Sara')
+        self.assertEqual(self.student.last_name, 'Green')
+        self.assertEqual(self.student.email, 'sara@example.com')
+        # Still signed in after changing the login email.
+        self.assertEqual(self.client.get(reverse('user_profile')).status_code, 200)
+
+    def test_profile_page_has_edit_form(self):
+        self.login(self.student)
+        response = self.client.get(reverse('user_profile'))
+        self.assertContains(response, 'id="profileModal"')
+        self.assertContains(response, 'value="student@example.com"')
+
+    def test_duplicate_email_rejected_case_insensitive(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {
+            'first_name': 'S', 'last_name': 'T', 'email': 'TEACHER@example.com',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('email', response.context['edit_profile_form'].errors)
+        self.assertTrue(response.context['edit_profile_open'])
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.email, 'student@example.com')
+
+    def test_invalid_email_and_long_name_rejected(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {
+            'first_name': 'x' * 31, 'last_name': 'T', 'email': 'not-an-email',
+        })
+        self.assertEqual(response.status_code, 400)
+        errors = response.context['edit_profile_form'].errors
+        self.assertIn('email', errors)
+        self.assertIn('first_name', errors)
+        # Rejected values never leak into the rendered personal info.
+        self.assertEqual(response.context['info'].email, 'student@example.com')
+
+    def test_picture_upload(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {
+            'first_name': 'S', 'last_name': 'T', 'email': 'student@example.com',
+            'picture': png_upload(),
+        })
+        self.assertEqual(response.status_code, 302)
+        profile = ProfileImg.objects.get(user=self.student)
+        self.assertTrue(profile.picture.name.startswith('profile_images/'))
+
+    def test_non_image_upload_rejected(self):
+        self.login(self.student)
+        fake = SimpleUploadedFile('evil.png', b'<?php echo 1; ?>', content_type='image/png')
+        response = self.client.post(self.url, {
+            'first_name': 'Changed', 'last_name': 'T', 'email': 'student@example.com', 'picture': fake,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('picture', response.context['edit_profile_img_form'].errors)
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.first_name, 'S')
+
+    def test_disallowed_extension_rejected(self):
+        self.login(self.student)
+        response = self.client.post(self.url, {
+            'first_name': 'S', 'last_name': 'T', 'email': 'student@example.com',
+            'picture': png_upload('avatar.svg'),
+        })
+        self.assertEqual(response.status_code, 400)
+
+    def test_oversized_picture_rejected(self):
+        self.login(self.student)
+        with mock.patch('accounts.forms.PROFILE_IMAGE_MAX_MB', 0):
+            response = self.client.post(self.url, {
+                'first_name': 'S', 'last_name': 'T', 'email': 'student@example.com',
+                'picture': png_upload(),
+            })
+        self.assertEqual(response.status_code, 400)
+
+    def test_cannot_target_another_user(self):
+        self.login(self.student)
+        self.client.post(self.url, {
+            'first_name': 'Hacked', 'last_name': 'X', 'email': 'student@example.com',
+            'id': self.teacher.pk, 'user': self.teacher.pk, 'pk': self.teacher.pk,
+        })
+        self.teacher.refresh_from_db()
+        self.assertEqual(self.teacher.first_name, 'T')
+        self.student.refresh_from_db()
+        self.assertEqual(self.student.first_name, 'Hacked')
+
+    def test_get_not_allowed_and_anonymous_redirected(self):
+        self.assertEqual(self.client.post(self.url, {'email': 'a@b.com'}).status_code, 302)
+        self.login(self.student)
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+
+
+class NotificationTest(AuthedTestCase):
+
+    def setUp(self):
+        self.mine_old = notify(self.student, 'Old one')
+        self.mine_new = notify(self.student, 'New one', link='/user_profile/', kind='success')
+        self.theirs = notify(self.teacher, 'Teacher only')
+
+    def test_list_returns_only_own_newest_first(self):
+        self.login(self.student)
+        data = self.client.get(reverse('notifications_list')).json()
+        self.assertEqual(data['unread_count'], 2)
+        ids = [n['id'] for n in data['notifications']]
+        self.assertEqual(ids, [self.mine_new.id, self.mine_old.id])
+        self.assertNotIn(self.theirs.id, ids)
+        first = data['notifications'][0]
+        self.assertEqual(first['message'], 'New one')
+        self.assertFalse(first['is_read'])
+        self.assertIn('created_at', first)
+
+    def test_mark_one_read(self):
+        self.login(self.student)
+        response = self.client.post(reverse('notification_read', args=[self.mine_old.id]))
+        self.assertEqual(response.json()['unread_count'], 1)
+        self.mine_old.refresh_from_db()
+        self.assertTrue(self.mine_old.is_read)
+
+    def test_cannot_mark_someone_elses_read(self):
+        self.login(self.student)
+        response = self.client.post(reverse('notification_read', args=[self.theirs.id]))
+        self.assertEqual(response.status_code, 404)
+        self.theirs.refresh_from_db()
+        self.assertFalse(self.theirs.is_read)
+
+    def test_mark_all_read_only_affects_own(self):
+        self.login(self.student)
+        response = self.client.post(reverse('notifications_read_all'))
+        self.assertEqual(response.json()['updated'], 2)
+        self.assertFalse(Notification.objects.filter(user=self.student, is_read=False).exists())
+        self.theirs.refresh_from_db()
+        self.assertFalse(self.theirs.is_read)
+
+    def test_state_changes_require_post_and_login(self):
+        self.login(self.student)
+        self.assertEqual(self.client.get(reverse('notification_read', args=[self.mine_old.id])).status_code, 405)
+        self.assertEqual(self.client.get(reverse('notifications_read_all')).status_code, 405)
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('notifications_list')).status_code, 302)
+
+    def test_csrf_required(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.student)
+        self.assertEqual(client.post(reverse('notifications_read_all')).status_code, 403)
+
+    def test_header_shows_real_unread_count(self):
+        self.login(self.student)
+        response = self.client.get(reverse('index'))
+        self.assertEqual(response.context['notif_unread_count'], 2)
+        self.assertContains(response, 'id="notifCount">2</span>', html=False)
+        self.assertNotContains(response, '<span class="badge-count">5</span>')
+
+    def test_header_hides_badge_when_no_unread(self):
+        Notification.objects.filter(user=self.student).update(is_read=True)
+        self.login(self.student)
+        response = self.client.get(reverse('index'))
+        self.assertContains(response, 'id="notifCount" hidden')
+
+    def test_external_links_are_dropped(self):
+        n = notify(self.student, 'x', link='https://evil.example.com/')
+        self.assertEqual(n.link, '')
+
+    def test_comment_notifies_course_teacher(self):
+        course = Course.objects.create(
+            student=self.teacher, title='Notify', category='python', level='beginner',
+            Course_price=0, description='x', is_published=True,
+        )
+        self.login(self.student)
+        self.client.post(reverse('add_comment', args=[course.id]), {'text': 'Great!'})
+        self.assertTrue(Notification.objects.filter(user=self.teacher, message__contains='commented').exists())
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class PlaylistEditDeleteTest(TempMediaMixin, AuthedTestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.other_teacher = make_user('teacher2@example.com', role='teacher')
+        cls.course = Course.objects.create(
+            student=cls.teacher, title='Mine', category='python', level='beginner',
+            Course_price=0, description='x', is_published=True,
+        )
+        cls.other_course = Course.objects.create(
+            student=cls.other_teacher, title='Theirs', category='python', level='beginner',
+            Course_price=0, description='x', is_published=True,
+        )
+        Enrollment.objects.create(student=cls.student, course=cls.course)
+
+    def setUp(self):
+        self.first = self.add(self.course, 'one.mp4', 1)
+        self.second = self.add(self.course, 'two.mp4', 2)
+        self.third = self.add(self.course, 'three.mp4', 3)
+        self.foreign = self.add(self.other_course, 'foreign.mp4', 1)
+
+    def add(self, course, name, order):
+        return Playlist.objects.create(
+            course=course, order=order,
+            video=SimpleUploadedFile(name, b'\x00\x00\x00\x18ftypmp42', content_type='video/mp4'),
+        )
+
+    def edit_url(self, course, entry):
+        return reverse('edit_playlist_video', args=[course.id, entry.id])
+
+    def delete_url(self, course, entry):
+        return reverse('delete_playlist_video', args=[course.id, entry.id])
+
+    def ordered_ids(self, course):
+        return list(Playlist.objects.filter(course=course).values_list('id', flat=True))
+
+    def test_owner_listing_has_manage_urls_student_does_not(self):
+        self.login(self.teacher)
+        data = self.client.get(reverse('get_playlist_videos', args=[self.course.id])).json()
+        self.assertTrue(data['can_manage'])
+        self.assertEqual([v['id'] for v in data['videos']], [self.first.id, self.second.id, self.third.id])
+        self.assertIn('edit_url', data['videos'][0])
+        self.login(self.student)
+        data = self.client.get(reverse('get_playlist_videos', args=[self.course.id])).json()
+        self.assertFalse(data['can_manage'])
+        self.assertNotIn('edit_url', data['videos'][0])
+        self.assertNotIn(self.foreign.id, [v['id'] for v in data['videos']])
+
+    def test_edit_title_description_and_position(self):
+        self.login(self.teacher)
+        response = self.client.post(self.edit_url(self.course, self.third), {
+            'title': ' Intro ', 'description': 'Start here', 'position': 1,
+        })
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertTrue(response.json()['success'])
+        self.third.refresh_from_db()
+        self.assertEqual(self.third.title, 'Intro')
+        self.assertEqual(self.third.description, 'Start here')
+        self.assertEqual(self.ordered_ids(self.course), [self.third.id, self.first.id, self.second.id])
+        self.assertEqual(
+            list(Playlist.objects.filter(course=self.course).values_list('order', flat=True)), [1, 2, 3],
+        )
+        self.foreign.refresh_from_db()
+        self.assertEqual(self.foreign.order, 1)
+
+    def test_blank_title_falls_back_to_file_name(self):
+        self.login(self.teacher)
+        self.client.post(self.edit_url(self.course, self.first), {'title': '', 'position': 1})
+        self.first.refresh_from_db()
+        self.assertTrue(self.first.display_title.startswith('one'))
+
+    def test_replace_video_removes_old_file(self):
+        self.login(self.teacher)
+        old_path = self.first.video.path
+        response = self.client.post(self.edit_url(self.course, self.first), {
+            'position': 1,
+            'video': SimpleUploadedFile('new.webm', b'webm', content_type='video/webm'),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.first.refresh_from_db()
+        self.assertIn('new', self.first.video.name)
+        self.assertFalse(os.path.exists(old_path))
+
+    def test_invalid_input_rejected(self):
+        self.login(self.teacher)
+        cases = [
+            {'title': 'x' * 201, 'position': 1},
+            {'title': 'ok', 'position': 0},
+            {'title': 'ok', 'position': 'abc'},
+            {'title': 'ok', 'position': 1,
+             'video': SimpleUploadedFile('notes.txt', b'hello', content_type='text/plain')},
+        ]
+        for data in cases:
+            response = self.client.post(self.edit_url(self.course, self.first), data)
+            self.assertEqual(response.status_code, 400, data)
+            self.assertTrue(response.json()['errors'])
+        self.first.refresh_from_db()
+        self.assertEqual(self.first.title, '')
+
+    def test_cross_course_ids_are_404(self):
+        self.login(self.teacher)
+        # Teacher's own course id in the URL, but another course's entry.
+        response = self.client.post(self.edit_url(self.course, self.foreign), {'title': 'Hijack', 'position': 1})
+        self.assertEqual(response.status_code, 404)
+        response = self.client.post(self.delete_url(self.course, self.foreign))
+        self.assertEqual(response.status_code, 404)
+        self.foreign.refresh_from_db()
+        self.assertEqual(self.foreign.title, '')
+        self.assertTrue(Playlist.objects.filter(pk=self.foreign.pk).exists())
+
+    def test_other_teacher_and_student_forbidden(self):
+        for user in (self.other_teacher, self.student):
+            self.login(user)
+            response = self.client.post(self.edit_url(self.course, self.first), {'title': 'X', 'position': 1})
+            self.assertEqual(response.status_code, 403)
+            response = self.client.post(self.delete_url(self.course, self.first))
+            self.assertEqual(response.status_code, 403)
+        self.first.refresh_from_db()
+        self.assertEqual(self.first.title, '')
+        self.assertEqual(Playlist.objects.filter(course=self.course).count(), 3)
+
+    def test_superuser_can_manage(self):
+        self.login(self.superuser)
+        response = self.client.post(self.edit_url(self.course, self.first), {'title': 'Admin fix', 'position': 1})
+        self.assertEqual(response.status_code, 200)
+
+    def test_delete_removes_entry_and_file_and_renumbers(self):
+        self.login(self.teacher)
+        path = self.first.video.path
+        response = self.client.post(self.delete_url(self.course, self.first))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['remaining'], 2)
+        self.assertFalse(Playlist.objects.filter(pk=self.first.pk).exists())
+        self.assertFalse(os.path.exists(path))
+        self.assertEqual(self.ordered_ids(self.course), [self.second.id, self.third.id])
+        self.assertEqual(
+            list(Playlist.objects.filter(course=self.course).values_list('order', flat=True)), [1, 2],
+        )
+        self.assertTrue(Playlist.objects.filter(pk=self.foreign.pk).exists())
+
+    def test_get_and_anonymous_rejected(self):
+        self.login(self.teacher)
+        self.assertEqual(self.client.get(self.delete_url(self.course, self.first)).status_code, 405)
+        self.assertEqual(self.client.get(self.edit_url(self.course, self.first)).status_code, 405)
+        self.client.logout()
+        self.assertEqual(self.client.post(self.delete_url(self.course, self.first)).status_code, 302)
+        self.assertTrue(Playlist.objects.filter(pk=self.first.pk).exists())
+
+    def test_csrf_required(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.teacher)
+        self.assertEqual(client.post(self.delete_url(self.course, self.first)).status_code, 403)
+        self.assertTrue(Playlist.objects.filter(pk=self.first.pk).exists())
+
+    def test_new_upload_goes_last_and_notifies_students(self):
+        self.login(self.teacher)
+        response = self.client.post(reverse('add_playlist', args=[self.course.id]), {
+            'video': SimpleUploadedFile('four.mp4', b'\x00', content_type='video/mp4'),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.ordered_ids(self.course)[-1], response.json()['video']['id'])
+        self.assertTrue(Notification.objects.filter(user=self.student, message__contains='New video').exists())
+        self.assertFalse(Notification.objects.filter(user=self.other_teacher).exists())
+
+
+class NotificationTriggerTest(AuthedTestCase):
+    """Real application events create notifications for the right people."""
+
+    def test_teacher_application_approve_and_reject(self):
+        from teacher.models import TeacherApplication
+        app = TeacherApplication.objects.create(
+            user=self.student, experience='3', expertise='programming',
+            c_v='teacher_cv/cv.pdf', reason='Love teaching',
+        )
+        self.login(self.superuser)
+        self.client.get(reverse('approve_staff', args=[app.pk]))
+        self.assertTrue(Notification.objects.filter(
+            user=self.student, kind='success', message__contains='approved').exists())
+        self.client.get(reverse('reject_staff', args=[app.pk]))
+        self.assertTrue(Notification.objects.filter(
+            user=self.student, kind='warning').exists())
+        self.assertFalse(Notification.objects.filter(user=self.superuser).exists())
+
+    def test_paid_enrollment_notifies_student_and_teacher_once(self):
+        from student.payments import simulate_hesabpay_success
+        course = Course.objects.create(
+            student=self.teacher, title='Paid', category='python', level='beginner',
+            Course_price=5, description='x', is_published=True,
+        )
+        order = CourseOrder.objects.create(student=self.student, course=course)
+        with self.captureOnCommitCallbacks(execute=True):
+            simulate_hesabpay_success(order)
+        self.assertEqual(Notification.objects.filter(user=self.student, message__contains='enrolled').count(), 1)
+        self.assertEqual(Notification.objects.filter(user=self.teacher, message__contains='enrolled').count(), 1)

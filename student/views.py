@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from .models import Comment, CourseOrder, Enrollment, Like, QuizAttempt, StudentAnswer
 from teacher.models import Course, Quiz, Question, Answer
 from accounts.models import ProfileImg
+from accounts.notifications import notify
 
 
 @login_required
@@ -116,6 +117,12 @@ def add_comment(request, course_id):
         user=request.user,
         text=text
     )
+    if course.student_id != request.user.id:
+        notify(
+            course.student,
+            f'{request.user.get_full_name() or request.user.email} commented on "{course.title}".',
+            link=reverse('priview', args=[course.id]),
+        )
 
     return JsonResponse({
         'status': 'success',
@@ -310,6 +317,13 @@ def submit_quiz(request):
             attempt.status = 'graded'
             attempt.graded_at = timezone.now()
         attempt.save()
+
+        if has_manual_question:
+            notify(
+                quiz_obj.teacher,
+                f'{request.user.get_full_name() or request.user.email} submitted "{quiz_obj.title}" - it needs grading.',
+                link=reverse('quiz_submissions', args=[quiz_obj.id]),
+            )
 
         return JsonResponse({
             'status': 'success',
